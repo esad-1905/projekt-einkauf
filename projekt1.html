@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Einkaufsliste Pro</title>
+
+<style>
+body {
+    font-family: Arial;
+    margin: 0;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* LOGIN BOX */
+.login-box, .app {
+    background: #111827;
+    padding: 25px;
+    border-radius: 12px;
+    width: 350px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+h1 {
+    text-align: center;
+}
+
+/* INPUT */
+input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+/* BUTTON */
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.green { background: #22c55e; color: white; }
+.blue { background: #3b82f6; color: white; }
+.red { background: #ef4444; color: white; }
+
+/* ERROR */
+.error {
+    color: #f87171;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* LIST */
+.item {
+    display: flex;
+    justify-content: space-between;
+    background: #1f2937;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    align-items: center;
+}
+
+.controls button {
+    width: 30px;
+    height: 30px;
+    margin-left: 5px;
+    border-radius: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div class="login-box" id="loginBox">
+    <h1>🔐 Passwort erstellen</h1>
+    <input type="password" id="pass1" placeholder="Passwort erstellen">
+    <input type="password" id="pass2" placeholder="Passwort wiederholen">
+    <button class="green" onclick="register()">Erstellen</button>
+
+    <h1 style="margin-top:20px;">Login</h1>
+    <input type="password" id="loginPass" placeholder="Passwort eingeben">
+    <button class="blue" onclick="login()">Login</button>
+
+    <div class="error" id="error"></div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app" style="display:none;">
+    <h1>🛒 Einkaufsliste</h1>
+
+    <input id="product" placeholder="Produkt hinzufügen">
+    <button class="green" onclick="addItem()">Hinzufügen</button>
+
+    <div id="list"></div>
+</div>
+
+<script>
+
+let password = localStorage.getItem("password");
+let items = JSON.parse(localStorage.getItem("items") || "[]");
+
+/* REGISTER */
+function register() {
+    let p1 = document.getElementById("pass1").value;
+    let p2 = document.getElementById("pass2").value;
+
+    if(p1 === "" || p1 !== p2){
+        document.getElementById("error").innerText = "❌ Passwörter stimmen nicht!";
+        return;
+    }
+
+    localStorage.setItem("password", p1);
+    password = p1;
+    document.getElementById("error").innerText = "✔ Passwort erstellt!";
+}
+
+/* LOGIN */
+function login() {
+    let input = document.getElementById("loginPass").value;
+
+    if(input === password){
+        document.getElementById("loginBox").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        render();
+    } else {
+        document.getElementById("error").innerText = "❌ Falsches Passwort!";
+    }
+}
+
+/* ADD ITEM */
+function addItem() {
+    let val = document.getElementById("product").value;
+    if(val === "") return;
+
+    items.push({name: val, count: 1});
+    save();
+    render();
+}
+
+/* + / - */
+function change(index, value){
+    items[index].count += value;
+    if(items[index].count <= 0){
+        items.splice(index,1);
+    }
+    save();
+    render();
+}
+
+/* SAVE */
+function save(){
+    localStorage.setItem("items", JSON.stringify(items));
+}
+
+/* RENDER */
+function render(){
+    let list = document.getElementById("list");
+    list.innerHTML = "";
+
+    items.forEach((item, i) => {
+        list.innerHTML += `
+        <div class="item">
+            <div>${item.name} (x${item.count})</div>
+            <div class="controls">
+                <button class="blue" onclick="change(${i}, 1)">+</button>
+                <button class="red" onclick="change(${i}, -1)">-</button>
+            </div>
+        </div>`;
+    });
+}
+
+</script>
+
+</body>
+</html>
