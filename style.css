@@ -1,0 +1,83 @@
+body {
+    font-family: Arial;
+    margin: 0;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* BOX */
+.login-box, .app {
+    background: #111827;
+    padding: 25px;
+    border-radius: 12px;
+    width: 380px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* TITEL */
+h1 {
+    text-align: center;
+}
+
+/* INPUT */
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+}
+
+/* BUTTON */
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.green { background: #22c55e; color: white; }
+.blue { background: #3b82f6; color: white; }
+.red { background: #ef4444; color: white; }
+.gray { background: #6b7280; color: white; }
+
+/* ERROR */
+.error {
+    color: #f87171;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* ITEM */
+.item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1f2937;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 8px;
+}
+
+/* GEKAUFT */
+.done {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+/* CONTROLS */
+.controls button {
+    width: 28px;
+    height: 28px;
+    margin-left: 5px;
+    border-radius: 6px;
+    font-size: 14px;
+}

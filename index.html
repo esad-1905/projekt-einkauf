@@ -1,161 +1,78 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
-<meta charset="UTF-8">
-<title>Einkaufsliste Pro V2</title>
-
-<style>
-body {
-    font-family: Arial;
-    margin: 0;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
-/* BOX */
-.login-box, .app {
-    background: #111827;
-    padding: 25px;
-    border-radius: 12px;
-    width: 380px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-/* TITEL */
-h1 {
-    text-align: center;
-}
-
-/* INPUT */
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    border-radius: 8px;
-    border: none;
-    outline: none;
-}
-
-/* BUTTON */
-button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.green { background: #22c55e; color: white; }
-.blue { background: #3b82f6; color: white; }
-.red { background: #ef4444; color: white; }
-.gray { background: #6b7280; color: white; }
-
-/* ERROR */
-.error {
-    color: #f87171;
-    text-align: center;
-    margin-top: 10px;
-}
-
-/* ITEM */
-.item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #1f2937;
-    padding: 10px;
-    margin-top: 10px;
-    border-radius: 8px;
-}
-
-/* GEKAUFT */
-.done {
-    text-decoration: line-through;
-    opacity: 0.6;
-}
-
-/* CONTROLS */
-.controls button {
-    width: 28px;
-    height: 28px;
-    margin-left: 5px;
-    border-radius: 6px;
-    font-size: 14px;
-}
-</style>
+    <meta charset="UTF-8">
+    <title>Einkaufsliste Pro V2</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div class="login-box" id="loginBox">
-    <h1>🔐 Einkaufsliste Pro</h1>
+    <!-- LOGIN -->
+    <div class="login-box" id="loginBox">
+        <h1>🔐 Einkaufsliste Pro</h1>
 
-    <input type="text" id="username" placeholder="Benutzername">
+        <input type="text" id="username" placeholder="Benutzername">
 
-    <input type="password" id="pass1" placeholder="Passwort erstellen">
-    <input type="password" id="pass2" placeholder="Passwort wiederholen">
-    <button class="green" onclick="register()">Account erstellen</button>
+        <input type="password" id="pass1" placeholder="Passwort erstellen">
+        <input type="password" id="pass2" placeholder="Passwort wiederholen">
+        <button class="green" onclick="register()">Account erstellen</button>
 
-    <hr>
+        <hr>
 
-    <input type="password" id="loginPass" placeholder="Passwort">
-    <button class="blue" onclick="login()">Login</button>
+        <input type="password" id="loginPass" placeholder="Passwort">
+        <button class="blue" onclick="login()">Login</button>
 
-    <div class="error" id="error"></div>
-</div>
+        <div class="error" id="error"></div>
+    </div>
 
-<!-- APP -->
-<div class="app" id="app" style="display:none;">
+    <!-- APP -->
+    <div class="app" id="app" style="display:none;">
 
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-        <h1>🛒 Einkaufsliste</h1>
-        <div style="text-align:right;">
-            <div id="userDisplay"></div>
-            <button class="gray" onclick="logout()" style="width:auto;margin-top:6px;">Abmelden</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h1>🛒 Einkaufsliste</h1>
+            <div style="text-align:right;">
+                <div id="userDisplay"></div>
+                <button class="gray" onclick="logout()" style="width:auto;margin-top:6px;">Abmelden</button>
+            </div>
         </div>
+
+        <input id="product" placeholder="Produkt">
+        <div style="display:flex;gap:8px;margin-top:8px;">
+            <select id="category">
+                <option>Sonstiges</option>
+                <option>Obst</option>
+                <option>Gemüse</option>
+                <option>Getränke</option>
+                <option>Fleisch</option>
+                <option>Haushalt</option>
+            </select>
+
+            <input type="date" id="date" style="width:170px;" title="Einkaufsdatum">
+        </div>
+
+        <div style="display:flex;gap:8px;">
+            <button class="green" onclick="addItem()">Hinzufügen</button>
+            <button class="gray" onclick="toggleTheme()" style="width:auto;">🌙/☀️ Modus</button>
+        </div>
+
+        <input id="search" placeholder="🔍 Suche..." oninput="render()" style="margin-top:10px;">
+
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button class="gray" onclick="exportJSON()">Export JSON</button>
+            <button class="gray" onclick="triggerImport()">Import JSON</button>
+            <button class="gray" onclick="exportPDF()">Export PDF</button>
+            <button class="gray" onclick="exportAllUsersJSON()" title="Backup aller Benutzer">Backup Nutzer</button>
+        </div>
+
+        <input type="file" id="importFile" accept="application/json" style="display:none;">
+
+        <div id="list"></div>
     </div>
 
-    <input id="product" placeholder="Produkt">
-    <div style="display:flex;gap:8px;margin-top:8px;">
-        <select id="category">
-            <option>Sonstiges</option>
-            <option>Obst</option>
-            <option>Gemüse</option>
-            <option>Getränke</option>
-            <option>Fleisch</option>
-            <option>Haushalt</option>
-        </select>
-
-        <input type="date" id="date" style="width:170px;" title="Einkaufsdatum">
-    </div>
-
-    <div style="display:flex;gap:8px;">
-        <button class="green" onclick="addItem()">Hinzufügen</button>
-        <button class="gray" onclick="toggleTheme()" style="width:auto;">🌙/☀️ Modus</button>
-    </div>
-
-    <input id="search" placeholder="🔍 Suche..." oninput="render()" style="margin-top:10px;">
-
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-        <button class="gray" onclick="exportJSON()">Export JSON</button>
-        <button class="gray" onclick="triggerImport()">Import JSON</button>
-        <button class="gray" onclick="exportPDF()">Export PDF</button>
-        <button class="gray" onclick="exportAllUsersJSON()" title="Backup aller Benutzer">Backup Nutzer</button>
-    </div>
-
-    <input type="file" id="importFile" accept="application/json" style="display:none;">
-
-    <div id="list"></div>
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 
 </body>
+
 </html>
