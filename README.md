@@ -1,4 +1,4 @@
- # Einkaufsliste Pro
+# Einkaufsliste Pro
 
 ## Kurzanleitung
 
@@ -32,4 +32,6 @@ git commit -m "Add multi-user features, import/export, PDF, theme, date, categor
 
 ## Hinweis
 
+
 Das Projekt ist rein clientseitig und speichert Daten im Browser (`localStorage`).
+
