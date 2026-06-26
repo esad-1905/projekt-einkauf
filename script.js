@@ -1,7 +1,10 @@
 let users = JSON.parse(localStorage.getItem("users") || "{}");
-let currentUser = null;
+let currentUser = localStorage.getItem("currentUser") || null;
 let items = [];
-let password = null;
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
 
 /* ---------------- LOGIN / REGISTER ---------------- */
 
@@ -15,14 +18,20 @@ function register() {
         return;
     }
 
+    if (users[username]) {
+        document.getElementById("error").innerText = "❌ Benutzername existiert bereits";
+        return;
+    }
+
     users[username] = {
         password: p1,
-        items: []
+        items: [],
+        settings: { theme: 'dark' }
     };
 
     localStorage.setItem("users", JSON.stringify(users));
 
-    document.getElementById("error").innerText = "✔ Account erstellt!";
+    document.getElementById("error").innerText = "✔ Account erstellt! Du kannst dich jetzt einloggen.";
 }
 
 /* LOGIN */
@@ -36,29 +45,38 @@ function login() {
     }
 
     currentUser = username;
-    items = users[username].items;
+    localStorage.setItem('currentUser', currentUser);
+    items = users[username].items || [];
 
     document.getElementById("loginBox").style.display = "none";
     document.getElementById("app").style.display = "block";
 
+    applyTheme();
     render();
 }
 
 /* ---------------- ADD ITEM ---------------- */
 
 function addItem() {
-    let name = document.getElementById("product").value;
+    let name = document.getElementById("product").value.trim();
     let category = document.getElementById("category").value;
+    let dateVal = document.getElementById("date").value;
 
     if (!name) return;
 
+    let date = dateVal ? new Date(dateVal).toLocaleDateString() : new Date().toLocaleDateString();
+
     items.push({
+        id: generateId(),
         name,
         category,
         count: 1,
         done: false,
-        date: new Date().toLocaleDateString()
+        date
     });
+
+    document.getElementById("product").value = "";
+    document.getElementById("date").value = "";
 
     save();
     render();
@@ -66,56 +84,71 @@ function addItem() {
 
 /* ---------------- CHANGE COUNT ---------------- */
 
-function change(i, value) {
+function findIndexById(id) {
+    return items.findIndex(it => it.id === id);
+}
+
+function changeById(id, value) {
+    let i = findIndexById(id);
+    if (i === -1) return;
     items[i].count += value;
-
     if (items[i].count <= 0) {
-        items.splice(i, 1);
+        items.splice(i,1);
     }
-
-    save();
-    render();
+    save(); render();
 }
 
 /* ---------------- TOGGLE DONE ---------------- */
 
-function toggleDone(i) {
+function toggleDoneById(id) {
+    let i = findIndexById(id);
+    if (i === -1) return;
     items[i].done = !items[i].done;
-    save();
-    render();
+    save(); render();
 }
 
 /* ---------------- DELETE ---------------- */
 
-function removeItem(i) {
-    items.splice(i, 1);
-    save();
-    render();
+function removeItemById(id) {
+    let i = findIndexById(id);
+    if (i === -1) return;
+    items.splice(i,1);
+    save(); render();
 }
 
 /* ---------------- EDIT ---------------- */
 
-function editItem(i) {
-    let newName = prompt("Neuer Name:", items[i].name);
-    if (newName) {
-        items[i].name = newName;
+function editItemById(id) {
+    let i = findIndexById(id);
+    if (i === -1) return;
+    let it = items[i];
+    let newName = prompt("Name:", it.name);
+    if (newName === null) return;
+    let newCat = prompt("Kategorie:", it.category) || it.category;
+    let newCount = parseInt(prompt("Menge:", it.count), 10) || it.count;
+    let newDate = prompt("Einkaufsdatum (YYYY-MM-DD):", new Date(it.date).toISOString().slice(0,10));
+
+    it.name = newName.trim() || it.name;
+    it.category = newCat;
+    it.count = isNaN(newCount) ? it.count : newCount;
+    if (newDate) {
+        try { it.date = new Date(newDate).toLocaleDateString(); } catch(e){}
     }
-    save();
-    render();
+
+    save(); render();
 }
 
 /* ---------------- SEARCH ---------------- */
 
 function render() {
+    document.getElementById('userDisplay').innerText = currentUser ? `Benutzer: ${currentUser}` : '';
     let list = document.getElementById("list");
     let search = document.getElementById("search")?.value.toLowerCase() || "";
-
     list.innerHTML = "";
 
     items
-        .filter(item => item.name.toLowerCase().includes(search))
-        .forEach((item, i) => {
-
+        .filter(item => item.name.toLowerCase().includes(search) || item.category.toLowerCase().includes(search))
+        .forEach(item => {
         list.innerHTML += `
         <div class="item ${item.done ? "done" : ""}">
             <div>
@@ -124,11 +157,11 @@ function render() {
             </div>
 
             <div class="controls">
-                <button class="blue" onclick="change(${i},1)">+</button>
-                <button class="blue" onclick="change(${i},-1)">-</button>
-                <button class="green" onclick="toggleDone(${i})">✔</button>
-                <button class="gray" onclick="editItem(${i})">✏️</button>
-                <button class="red" onclick="removeItem(${i})">🗑</button>
+                <button class="blue" onclick="changeById('${item.id}',1)">+</button>
+                <button class="blue" onclick="changeById('${item.id}',-1)">-</button>
+                <button class="green" onclick="toggleDoneById('${item.id}')">✔</button>
+                <button class="gray" onclick="editItemById('${item.id}')">✏️</button>
+                <button class="red" onclick="removeItemById('${item.id}')">🗑</button>
             </div>
         </div>`;
     });
@@ -139,71 +172,133 @@ function render() {
 /* ---------------- SAVE ---------------- */
 
 function save() {
-    users[currentUser].items = items;
+    if (currentUser) {
+        users[currentUser].items = items;
+    }
     localStorage.setItem("users", JSON.stringify(users));
 }
 
 /* ---------------- THEME ---------------- */
 
 function toggleTheme() {
-    document.body.classList.toggle("light");
+    if (!currentUser) {
+        document.body.classList.toggle('light');
+        return;
+    }
 
-    if (document.body.classList.contains("light")) {
-        document.body.style.background = "#e5e7eb";
-        document.body.style.color = "#111";
+    let s = users[currentUser].settings || { theme: 'dark' };
+    s.theme = s.theme === 'light' ? 'dark' : 'light';
+    users[currentUser].settings = s;
+    localStorage.setItem('users', JSON.stringify(users));
+    applyTheme();
+}
+
+function applyTheme() {
+    if (!currentUser) return;
+    let theme = users[currentUser]?.settings?.theme || 'dark';
+    if (theme === 'light') {
+        document.body.classList.add('light');
+        document.body.style.background = '#e5e7eb';
+        document.body.style.color = '#111';
     } else {
-        document.body.style.background = "linear-gradient(135deg, #0f172a, #1e293b)";
-        document.body.style.color = "white";
+        document.body.classList.remove('light');
+        document.body.style.background = 'linear-gradient(135deg, #0f172a, #1e293b)';
+        document.body.style.color = 'white';
     }
 }
 
 /* ---------------- EXPORT JSON ---------------- */
 
 function exportJSON() {
-    let data = JSON.stringify(items);
+    if (!currentUser) return alert('Bitte einloggen');
+    let data = JSON.stringify(items, null, 2);
     let blob = new Blob([data], {type: "application/json"});
     let url = URL.createObjectURL(blob);
-
     let a = document.createElement("a");
     a.href = url;
-    a.download = "einkaufsliste.json";
+    a.download = `${currentUser}_einkaufsliste.json`;
     a.click();
 }
 
 /* ---------------- IMPORT JSON ---------------- */
 
 function importJSON() {
-    let input = document.createElement("input");
-    input.type = "file";
-
-    input.onchange = e => {
-        let file = e.target.files[0];
-        let reader = new FileReader();
-
-        reader.onload = function(event) {
-            items = JSON.parse(event.target.result);
-            save();
-            render();
-        };
-
-        reader.readAsText(file);
-    };
-
-    input.click();
+    if (!currentUser) return alert('Bitte einloggen');
+    // handled by hidden file input triggerImport()
 }
+
+function triggerImport() {
+    if (!currentUser) return alert('Bitte einloggen');
+    let f = document.getElementById('importFile');
+    f.value = null;
+    f.click();
+}
+
+document.getElementById('importFile')?.addEventListener('change', function(e){
+    let file = e.target.files[0];
+    if (!file) return;
+    let reader = new FileReader();
+    reader.onload = function(ev){
+        try {
+            let parsed = JSON.parse(ev.target.result);
+            // ensure items have ids
+            parsed = parsed.map(it => ({ id: it.id || generateId(), name: it.name||'', category: it.category||'Sonstiges', count: it.count||1, done: !!it.done, date: it.date||new Date().toLocaleDateString() }));
+            items = parsed;
+            save(); render();
+            alert('Import erfolgreich');
+        } catch(err){ alert('Fehler beim Import'); }
+    };
+    reader.readAsText(file);
+});
 
 /* ---------------- PDF EXPORT ---------------- */
 
 function exportPDF() {
-    let text = items.map(i =>
-        `${i.name} (${i.category}) x${i.count}`
-    ).join("\n");
-
-    let blob = new Blob([text], {type: "application/pdf"});
-    let url = URL.createObjectURL(blob);
-
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "einkaufsliste.pdf";
-    a.click();
+    if (!currentUser) return alert('Bitte einloggen');
+    let w = window.open('', '_blank');
+    let html = `<!doctype html><html><head><meta charset="utf-8"><title>Einkaufsliste</title>
+    <style>body{font-family:Arial;padding:20px;} h1{font-size:20px;} .item{margin:6px 0;}</style>
+    </head><body>`;
+    html += `<h1>${currentUser} - Einkaufsliste</h1><ul>`;
+    items.forEach(i => {
+        html += `<li class="item">${i.name} (${i.category}) x${i.count} - ${i.date} ${i.done? '✅':''}</li>`;
+    });
+    html += `</ul></body></html>`;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    w.print();
 }
+
+function exportAllUsersJSON() {
+    let data = JSON.stringify(users, null, 2);
+    let blob = new Blob([data], {type: 'application/json'});
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    a.href = url; a.download = 'users_backup.json'; a.click();
+}
+
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loginBox').style.display = 'block';
+    document.getElementById('error').innerText = '';
+}
+
+// initialize on load
+window.addEventListener('load', ()=>{
+    if (currentUser && users[currentUser]) {
+        items = users[currentUser].items || [];
+        document.getElementById('loginBox').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        applyTheme();
+        render();
+    }
+
+    // default date input to today
+    let d = new Date();
+    let iso = d.toISOString().slice(0,10);
+    let dateInput = document.getElementById('date');
+    if (dateInput) dateInput.value = iso;
+});

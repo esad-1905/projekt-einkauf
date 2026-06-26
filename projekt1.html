@@ -114,27 +114,43 @@ button {
 <!-- APP -->
 <div class="app" id="app" style="display:none;">
 
-    <h1>🛒 Einkaufsliste</h1>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h1>🛒 Einkaufsliste</h1>
+        <div style="text-align:right;">
+            <div id="userDisplay"></div>
+            <button class="gray" onclick="logout()" style="width:auto;margin-top:6px;">Abmelden</button>
+        </div>
+    </div>
 
     <input id="product" placeholder="Produkt">
-    
-    <select id="category">
-        <option>Sonstiges</option>
-        <option>Obst</option>
-        <option>Gemüse</option>
-        <option>Getränke</option>
-        <option>Fleisch</option>
-        <option>Haushalt</option>
-    </select>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+        <select id="category">
+            <option>Sonstiges</option>
+            <option>Obst</option>
+            <option>Gemüse</option>
+            <option>Getränke</option>
+            <option>Fleisch</option>
+            <option>Haushalt</option>
+        </select>
 
-    <button class="green" onclick="addItem()">Hinzufügen</button>
+        <input type="date" id="date" style="width:170px;" title="Einkaufsdatum">
+    </div>
 
-    <input id="search" placeholder="🔍 Suche..." oninput="render()">
+    <div style="display:flex;gap:8px;">
+        <button class="green" onclick="addItem()">Hinzufügen</button>
+        <button class="gray" onclick="toggleTheme()" style="width:auto;">🌙/☀️ Modus</button>
+    </div>
 
-    <button class="gray" onclick="toggleTheme()">🌙/☀️ Modus</button>
-    <button class="gray" onclick="exportJSON()">Export JSON</button>
-    <button class="gray" onclick="importJSON()">Import JSON</button>
-    <button class="gray" onclick="exportPDF()">Export PDF</button>
+    <input id="search" placeholder="🔍 Suche..." oninput="render()" style="margin-top:10px;">
+
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+        <button class="gray" onclick="exportJSON()">Export JSON</button>
+        <button class="gray" onclick="triggerImport()">Import JSON</button>
+        <button class="gray" onclick="exportPDF()">Export PDF</button>
+        <button class="gray" onclick="exportAllUsersJSON()" title="Backup aller Benutzer">Backup Nutzer</button>
+    </div>
+
+    <input type="file" id="importFile" accept="application/json" style="display:none;">
 
     <div id="list"></div>
 </div>
