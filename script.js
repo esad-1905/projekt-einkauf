@@ -60,11 +60,12 @@ function login() {
 function addItem() {
     let name = document.getElementById("product").value.trim();
     let category = document.getElementById("category").value;
-    let dateVal = document.getElementById("date").value;
+    let dateVal = document.getElementById("date").value; // expected YYYY-MM-DD
 
     if (!name) return;
 
-    let date = dateVal ? new Date(dateVal).toLocaleDateString() : new Date().toLocaleDateString();
+    // store date internally as ISO YYYY-MM-DD
+    let dateISO = dateVal ? dateVal : new Date().toISOString().slice(0,10);
 
     items.push({
         id: generateId(),
@@ -72,7 +73,7 @@ function addItem() {
         category,
         count: 1,
         done: false,
-        date
+        date: dateISO
     });
 
     document.getElementById("product").value = "";
@@ -125,14 +126,18 @@ function editItemById(id) {
     let newName = prompt("Name:", it.name);
     if (newName === null) return;
     let newCat = prompt("Kategorie:", it.category) || it.category;
-    let newCount = parseInt(prompt("Menge:", it.count), 10) || it.count;
-    let newDate = prompt("Einkaufsdatum (YYYY-MM-DD):", new Date(it.date).toISOString().slice(0,10));
+
+    let newCountStr = prompt("Menge:", it.count);
+    let newCount = parseInt(newCountStr, 10);
+    let newDate = prompt("Einkaufsdatum (YYYY-MM-DD):", it.date || new Date().toISOString().slice(0,10));
 
     it.name = newName.trim() || it.name;
     it.category = newCat;
-    it.count = isNaN(newCount) ? it.count : newCount;
+    if (!isNaN(newCount)) it.count = newCount;
     if (newDate) {
-        try { it.date = new Date(newDate).toLocaleDateString(); } catch(e){}
+        // try to normalize to YYYY-MM-DD
+        let d = new Date(newDate);
+        if (!isNaN(d)) it.date = d.toISOString().slice(0,10);
     }
 
     save(); render();
@@ -149,11 +154,13 @@ function render() {
     items
         .filter(item => item.name.toLowerCase().includes(search) || item.category.toLowerCase().includes(search))
         .forEach(item => {
+        let displayDate = '';
+        try { displayDate = new Date(item.date).toLocaleDateString(); } catch(e) { displayDate = item.date; }
         list.innerHTML += `
         <div class="item ${item.done ? "done" : ""}">
             <div>
                 <b>${item.name}</b><br>
-                <small>${item.category} | ${item.date} | x${item.count}</small>
+                <small>${item.category} | ${displayDate} | x${item.count}</small>
             </div>
 
             <div class="controls">
@@ -241,8 +248,8 @@ document.getElementById('importFile')?.addEventListener('change', function(e){
     reader.onload = function(ev){
         try {
             let parsed = JSON.parse(ev.target.result);
-            // ensure items have ids
-            parsed = parsed.map(it => ({ id: it.id || generateId(), name: it.name||'', category: it.category||'Sonstiges', count: it.count||1, done: !!it.done, date: it.date||new Date().toLocaleDateString() }));
+            // ensure items have ids and normalize dates to ISO
+            parsed = parsed.map(it => ({ id: it.id || generateId(), name: it.name||'', category: it.category||'Sonstiges', count: it.count||1, done: !!it.done, date: normalizeDate(it.date) }));
             items = parsed;
             save(); render();
             alert('Import erfolgreich');
@@ -250,6 +257,19 @@ document.getElementById('importFile')?.addEventListener('change', function(e){
     };
     reader.readAsText(file);
 });
+
+function normalizeDate(d) {
+    if (!d) return new Date().toISOString().slice(0,10);
+    let dt = new Date(d);
+    if (!isNaN(dt)) return dt.toISOString().slice(0,10);
+    // try to parse dd.mm.yyyy or dd-mm-yyyy
+    let m = d.match(/(\d{1,2})[\.\-](\d{1,2})[\.\-](\d{4})/);
+    if (m) {
+        let iso = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+        return iso;
+    }
+    return new Date().toISOString().slice(0,10);
+}
 
 /* ---------------- PDF EXPORT ---------------- */
 
