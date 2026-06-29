@@ -1,83 +1,210 @@
+/* ─── Reset & Base ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #f0f4f8;
+  --surface:   #ffffff;
+  --accent:    #3b82f6;
+  --accent-h:  #2563eb;
+  --danger:    #ef4444;
+  --danger-h:  #dc2626;
+  --text:      #1e293b;
+  --muted:     #94a3b8;
+  --border:    #e2e8f0;
+  --radius:    14px;
+  --shadow:    0 4px 24px rgba(0,0,0,.08);
+  --font:      'Segoe UI', system-ui, sans-serif;
+}
+
 body {
-    font-family: Arial;
-    margin: 0;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  font-family: var(--font);
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem 4rem;
 }
 
-/* BOX */
-.login-box, .app {
-    background: #111827;
-    padding: 25px;
-    border-radius: 12px;
-    width: 380px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+/* ─── App Card ───────────────────────────────────────────────── */
+.app {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
-/* TITEL */
-h1 {
-    text-align: center;
+/* ─── Header ─────────────────────────────────────────────────── */
+.app-header {
+  background: var(--accent);
+  color: #fff;
+  padding: 1.4rem 1.6rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
 }
 
-/* INPUT */
-input, select {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    border-radius: 8px;
-    border: none;
-    outline: none;
+.header-icon { font-size: 1.6rem; line-height: 1; }
+
+.app-header h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
 }
 
-/* BUTTON */
-button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
+/* ─── Input Area ─────────────────────────────────────────────── */
+.input-area {
+  display: flex;
+  gap: .6rem;
+  padding: 1.2rem 1.4rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.green { background: #22c55e; color: white; }
-.blue { background: #3b82f6; color: white; }
-.red { background: #ef4444; color: white; }
-.gray { background: #6b7280; color: white; }
-
-/* ERROR */
-.error {
-    color: #f87171;
-    text-align: center;
-    margin-top: 10px;
+.input-area input {
+  flex: 1;
+  padding: .65rem 1rem;
+  font-size: 1rem;
+  font-family: var(--font);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  color: var(--text);
+  transition: border-color .18s;
 }
 
-/* ITEM */
-.item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #1f2937;
-    padding: 10px;
-    margin-top: 10px;
-    border-radius: 8px;
+.input-area input:focus { border-color: var(--accent); }
+.input-area input::placeholder { color: var(--muted); }
+
+.input-area button {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .18s, transform .1s;
 }
 
-/* GEKAUFT */
-.done {
-    text-decoration: line-through;
-    opacity: 0.6;
+.input-area button:hover  { background: var(--accent-h); }
+.input-area button:active { transform: scale(.93); }
+
+/* ─── Empty Hint ─────────────────────────────────────────────── */
+.empty-hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: .93rem;
+  padding: 2.4rem 1.4rem;
 }
 
-/* CONTROLS */
-.controls button {
-    width: 28px;
-    height: 28px;
-    margin-left: 5px;
-    border-radius: 6px;
-    font-size: 14px;
+/* ─── Product List ───────────────────────────────────────────── */
+.product-list {
+  list-style: none;
+  padding: .4rem 0;
+}
+
+.product-list li {
+  display: flex;
+  align-items: center;
+  padding: .75rem 1.4rem;
+  gap: .75rem;
+  border-bottom: 1px solid var(--border);
+  animation: slideIn .18s ease;
+  transition: background .15s;
+}
+
+.product-list li:last-child { border-bottom: none; }
+.product-list li:hover { background: #f8fafc; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Checkbox */
+.product-list li input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Product name */
+.item-name {
+  flex: 1;
+  font-size: .98rem;
+  color: var(--text);
+  word-break: break-word;
+  transition: color .15s, text-decoration .15s;
+}
+
+.product-list li.done .item-name {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* Delete button */
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: .3rem;
+  border-radius: 6px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color .15s, background .15s;
+}
+
+.delete-btn:hover {
+  color: var(--danger);
+  background: #fef2f2;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────── */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .9rem 1.4rem;
+  border-top: 1px solid var(--border);
+  background: #fafafa;
+}
+
+#itemCount {
+  font-size: .88rem;
+  color: var(--muted);
+}
+
+#clearAllBtn {
+  font-size: .85rem;
+  font-family: var(--font);
+  color: var(--danger);
+  background: none;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  padding: .35rem .85rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+#clearAllBtn:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 400px) {
+  .app { border-radius: 0; }
+  body { padding: 0; }
 }
