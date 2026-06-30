@@ -6,10 +6,15 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwcXlleW1qY29nZ2Rub3NpaGV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3Nzc1OTUsImV4cCI6MjA5ODM1MzU5NX0.NOIViDPPnrRDSk-4l2fr3SDs4o6rcBrQauhgL41RK4A';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ── DOM refs: Auth Screen ────────────────────────────────────
-    const authScreen = document.getElementById('authScreen');
-    const tabJoin = document.getElementById('tabJoin');
-    const tabCreate = document.getElementById('tabCreate');
+    // ── DOM refs: Choice / Auth Screens ──────────────────────────
+    const choiceScreen = document.getElementById('choiceScreen');
+    const joinScreen = document.getElementById('joinScreen');
+    const createScreen = document.getElementById('createScreen');
+    const goToJoin = document.getElementById('goToJoin');
+    const goToCreate = document.getElementById('goToCreate');
+    const backFromJoin = document.getElementById('backFromJoin');
+    const backFromCreate = document.getElementById('backFromCreate');
+
     const joinForm = document.getElementById('joinForm');
     const createForm = document.getElementById('createForm');
     const joinName = document.getElementById('joinName');
@@ -51,33 +56,55 @@
         const sharedListId = urlParams.get('list');
 
         if (sharedListId) {
-            await enterListById(sharedListId);
+            await enterListById(sharedListId, null, false);
             return;
         }
 
         // 2. Prüfen ob im Browser gespeicherte Session existiert
         const saved = loadSession();
         if (saved) {
-            await enterListById(saved.listId, saved.userName);
+            await enterListById(saved.listId, saved.userName, false);
             return;
         }
 
-        // 3. Sonst: Login-Screen zeigen
-        showAuthScreen();
+        // 3. Sonst: Auswahl-Screen zeigen
+        showScreen('choice');
     }
 
-    // ── Tabs wechseln ─────────────────────────────────────────────
-    tabJoin.addEventListener('click', () => switchTab('join'));
-    tabCreate.addEventListener('click', () => switchTab('create'));
+    // ── History API: Browser-Zurück-Button unterstützen ──────────
+    window.addEventListener('popstate', (e) => {
+        const state = e.state;
+        if (state && state.screen === 'list' && state.listId) {
+            enterListById(state.listId, state.userName, false);
+        } else if (state && state.screen === 'choice') {
+            currentList = null;
+            if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+            showScreen('choice');
+        } else {
+            // Fallback
+            showScreen('choice');
+        }
+    });
 
-    function switchTab(tab) {
-        const isJoin = tab === 'join';
-        tabJoin.classList.toggle('active', isJoin);
-        tabCreate.classList.toggle('active', !isJoin);
-        joinForm.hidden = !isJoin;
-        createForm.hidden = isJoin;
-        hideError(joinError);
-        hideError(createError);
+    function pushHistory(screen) {
+        if (screen === 'list' && currentList) {
+            history.pushState({ screen: 'list', listId: currentList.id, userName }, '', `?list=${currentList.id}`);
+        } else {
+            history.pushState({ screen: 'choice' }, '', window.location.pathname);
+        }
+    }
+
+    // ── Navigation zwischen Choice / Join / Create ────────────────
+    goToJoin.addEventListener('click', () => showScreen('join'));
+    goToCreate.addEventListener('click', () => showScreen('create'));
+    backFromJoin.addEventListener('click', () => showScreen('choice'));
+    backFromCreate.addEventListener('click', () => showScreen('choice'));
+
+    function showScreen(name) {
+        choiceScreen.hidden = name !== 'choice';
+        joinScreen.hidden = name !== 'join';
+        createScreen.hidden = name !== 'create';
+        listScreen.hidden = name !== 'list';
     }
 
     // ── Liste BEITRETEN ──────────────────────────────────────────
@@ -86,15 +113,15 @@
         hideError(joinError);
 
         const name = joinName.value.trim();
-        const listName = joinListName.value.trim();
+        const listNameVal = joinListName.value.trim();
         const password = joinPassword.value;
 
-        if (!name || !listName || !password) return;
+        if (!name || !listNameVal || !password) return;
 
         const { data, error } = await supabase
             .from('lists')
             .select('*')
-            .eq('name', listName)
+            .eq('name', listNameVal)
             .eq('password', password)
             .maybeSingle();
 
@@ -108,7 +135,7 @@
             return;
         }
 
-        await enterList(data, name);
+        await enterList(data, name, true);
     });
 
     // ── Liste ERSTELLEN ──────────────────────────────────────────
@@ -117,16 +144,15 @@
         hideError(createError);
 
         const name = createName.value.trim();
-        const listName = createListName.value.trim();
+        const listNameVal = createListName.value.trim();
         const password = createPassword.value;
 
-        if (!name || !listName || !password) return;
+        if (!name || !listNameVal || !password) return;
 
-        // Prüfen ob Listenname schon vergeben ist
         const { data: existing } = await supabase
             .from('lists')
             .select('id')
-            .eq('name', listName)
+            .eq('name', listNameVal)
             .maybeSingle();
 
         if (existing) {
@@ -136,7 +162,7 @@
 
         const { data, error } = await supabase
             .from('lists')
-            .insert({ name: listName, password })
+            .insert({ name: listNameVal, password })
             .select()
             .single();
 
@@ -145,24 +171,30 @@
             return;
         }
 
-        await enterList(data, name);
+        await enterList(data, name, true);
     });
 
     // ── Liste betreten (per Objekt) ──────────────────────────────
-    async function enterList(listRow, name) {
+    async function enterList(listRow, name, addHistoryEntry) {
         currentList = { id: listRow.id, name: listRow.name };
         userName = name;
 
         saveSession(currentList.id, userName);
-        clearUrlParam();
 
-        showListScreen();
+        if (addHistoryEntry) pushHistory('list');
+
+        showScreen('list');
+        currentListName.textContent = currentList.name;
+        currentUserName.textContent = `👤 ${userName}`;
+
         await loadItems();
         subscribeToChanges();
     }
 
-    // ── Liste betreten per ID (Share-Link oder gespeicherte Session) ─
-    async function enterListById(listId, name) {
+    // ── Liste betreten per ID (Share-Link, gespeicherte Session, History) ─
+    async function enterListById(listId, name, addHistoryEntry) {
+        if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+
         const { data, error } = await supabase
             .from('lists')
             .select('*')
@@ -170,34 +202,32 @@
             .maybeSingle();
 
         if (error || !data) {
-            // Liste existiert nicht (mehr) → zurück zum Login
             clearSession();
-            showAuthScreen();
+            showScreen('choice');
             return;
         }
 
         if (!name) {
-            // Über Share-Link ohne gespeicherten Namen → nach Namen fragen
             name = prompt(`Du trittst der Liste "${data.name}" bei. Wie ist dein Name?`);
             if (!name) {
-                showAuthScreen();
+                showScreen('choice');
                 return;
             }
         }
 
-        await enterList(data, name);
+        await enterList(data, name, addHistoryEntry);
     }
 
-    // ── New-Button: zurück zum Login für weitere Liste ───────────
+    // ── New-Button: zurück zur Auswahl für weitere Liste ──────────
     newListBtn.addEventListener('click', () => {
         if (realtimeChannel) supabase.removeChannel(realtimeChannel);
         clearSession();
-        clearUrlParam();
         currentList = null;
         items = [];
         joinForm.reset();
         createForm.reset();
-        showAuthScreen();
+        pushHistory('choice');
+        showScreen('choice');
     });
 
     // ── Share-Button ──────────────────────────────────────────────
@@ -210,19 +240,6 @@
             prompt('Link kopieren:', url);
         }
     });
-
-    // ── Screens umschalten ────────────────────────────────────────
-    function showAuthScreen() {
-        authScreen.hidden = false;
-        listScreen.hidden = true;
-    }
-
-    function showListScreen() {
-        authScreen.hidden = true;
-        listScreen.hidden = false;
-        currentListName.textContent = currentList.name;
-        currentUserName.textContent = `👤 ${userName}`;
-    }
 
     // ── Daten laden (nur Items der aktuellen Liste) ───────────────
     async function loadItems() {
@@ -244,7 +261,7 @@
     // ── Realtime-Abo: nur für die aktuelle Liste ──────────────────
     function subscribeToChanges() {
         realtimeChannel = supabase
-            .channel(`items-list-${currentList.id}`)
+            .channel(`items-list-${currentList.id}-${Date.now()}`)
             .on('postgres_changes',
                 { event: '*', schema: 'public', table: 'items', filter: `list_id=eq.${currentList.id}` },
                 () => loadItems()
@@ -279,33 +296,59 @@
         input.focus();
     }
 
+    // Optimistisches Löschen: UI sofort aktualisieren, dann erst Server
     async function deleteItem(id) {
+        const previous = items;
+        items = items.filter(i => i.id !== id);
+        render();
+
         const { error } = await supabase.from('items').delete().eq('id', id);
-        if (error) console.error('Fehler beim Löschen:', error);
+
+        if (error) {
+            console.error('Fehler beim Löschen:', error);
+            items = previous; // Rückgängig machen falls fehlgeschlagen
+            render();
+        }
     }
 
     async function toggleDone(id) {
         const item = items.find(i => i.id === id);
         if (!item) return;
 
+        // Optimistisches Update
+        item.done = !item.done;
+        render();
+
         const { error } = await supabase
             .from('items')
-            .update({ done: !item.done })
+            .update({ done: item.done })
             .eq('id', id);
 
-        if (error) console.error('Fehler beim Aktualisieren:', error);
+        if (error) {
+            console.error('Fehler beim Aktualisieren:', error);
+            item.done = !item.done; // Rückgängig machen
+            render();
+        }
     }
 
     async function clearAll() {
         if (!items.length) return;
         if (!confirm('Alle Produkte dieser Liste löschen?')) return;
 
+        const previous = items;
+        items = [];
+        render();
+
         const { error } = await supabase
             .from('items')
             .delete()
             .eq('list_id', currentList.id);
 
-        if (error) console.error('Fehler beim Löschen aller Produkte:', error);
+        if (error) {
+            console.error('Fehler beim Löschen aller Produkte:', error);
+            items = previous;
+            render();
+        }
     }
 
     function render() {
@@ -371,12 +414,6 @@
 
     function clearSession() {
         try { localStorage.removeItem('shoppinglist_session'); } catch (_) { }
-    }
-
-    function clearUrlParam() {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('list');
-        window.history.replaceState({}, '', url);
     }
 
     // ── UI Helpers ────────────────────────────────────────────────

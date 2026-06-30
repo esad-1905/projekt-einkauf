@@ -10,19 +10,35 @@
 
 <body>
 
-    <!-- ───────────── LOGIN / AUTH SCREEN ───────────── -->
-    <div class="app auth-screen" id="authScreen">
+    <!-- ───────────── EINSTIEGS-AUSWAHL ───────────── -->
+    <div class="app choice-screen" id="choiceScreen">
         <header class="app-header">
             <span class="header-icon">🛒</span>
             <h1>Einkaufsliste</h1>
         </header>
 
-        <div class="auth-tabs">
-            <button class="tab-btn active" id="tabJoin">Beitreten</button>
-            <button class="tab-btn" id="tabCreate">Erstellen</button>
+        <div class="choice-buttons">
+            <button class="choice-btn" id="goToJoin">
+                <span class="choice-icon">🔑</span>
+                <span class="choice-label">Liste beitreten</span>
+                <span class="choice-desc">Mit Name, Listenname &amp; Passwort</span>
+            </button>
+            <button class="choice-btn" id="goToCreate">
+                <span class="choice-icon">✨</span>
+                <span class="choice-label">Liste erstellen</span>
+                <span class="choice-desc">Neue Liste mit eigenem Passwort</span>
+            </button>
         </div>
+    </div>
 
-        <!-- Beitreten -->
+    <!-- ───────────── BEITRETEN SCREEN ───────────── -->
+    <div class="app auth-screen" id="joinScreen" hidden>
+        <header class="app-header">
+            <button class="back-btn" id="backFromJoin" aria-label="Zurück">←</button>
+            <span class="header-icon">🔑</span>
+            <h1>Liste beitreten</h1>
+        </header>
+
         <form class="auth-form" id="joinForm">
             <label>Dein Name</label>
             <input type="text" id="joinName" placeholder="z.B. Max" maxlength="30" required />
@@ -36,9 +52,17 @@
             <button type="submit" class="auth-submit">Beitreten</button>
             <p class="auth-error" id="joinError" hidden></p>
         </form>
+    </div>
 
-        <!-- Erstellen -->
-        <form class="auth-form" id="createForm" hidden>
+    <!-- ───────────── ERSTELLEN SCREEN ───────────── -->
+    <div class="app auth-screen" id="createScreen" hidden>
+        <header class="app-header">
+            <button class="back-btn" id="backFromCreate" aria-label="Zurück">←</button>
+            <span class="header-icon">✨</span>
+            <h1>Liste erstellen</h1>
+        </header>
+
+        <form class="auth-form" id="createForm">
             <label>Dein Name</label>
             <input type="text" id="createName" placeholder="z.B. Max" maxlength="30" required />
 
