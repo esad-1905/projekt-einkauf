@@ -24,7 +24,10 @@
     subscribeToChanges();
 
     // ── Events ────────────────────────────────────────────────────
-    addBtn.addEventListener('click', addItem);
+    addBtn.addEventListener('click', () => {
+        console.log('addBtn clicked');
+        addItem();
+    });
     input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
     clearAllBtn.addEventListener('click', clearAll);
 
@@ -56,26 +59,32 @@
 
     // ── Funktionen ────────────────────────────────────────────────
     async function addItem() {
-        const name = input.value.trim();
-        if (!name) {
+        console.log('addItem()');
+        try {
+            const name = input.value.trim();
+            if (!name) {
+                input.focus();
+                input.classList.add('shake');
+                setTimeout(() => input.classList.remove('shake'), 400);
+                return;
+            }
+
+            const { error } = await supabase
+                .from('items')
+                .insert({ name, done: false });
+
+            if (error) {
+                console.error('Fehler beim Hinzufügen:', error);
+                return;
+            }
+
+            input.value = '';
             input.focus();
-            input.classList.add('shake');
-            setTimeout(() => input.classList.remove('shake'), 400);
-            return;
-        }
-
-        const { error } = await supabase
-            .from('items')
-            .insert({ name, done: false });
-
-        if (error) {
+            // Kein manuelles render() nötig — Realtime-Abo lädt automatisch neu
+        } catch (error) {
             console.error('Fehler beim Hinzufügen:', error);
-            return;
         }
 
-        input.value = '';
-        input.focus();
-        // Kein manuelles render() nötig — Realtime-Abo lädt automatisch neu
     }
 
     async function deleteItem(id) {
