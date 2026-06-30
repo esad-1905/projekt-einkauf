@@ -6,6 +6,8 @@
   --surface:   #ffffff;
   --accent:    #3b82f6;
   --accent-h:  #2563eb;
+  --green:     #22c55e;
+  --green-h:   #16a34a;
   --danger:    #ef4444;
   --danger-h:  #dc2626;
   --text:      #1e293b;
@@ -52,6 +54,132 @@ body {
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -.02em;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* New-Button (grün, oben rechts) */
+.new-btn {
+  background: var(--green);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: .45rem .9rem;
+  font-size: .85rem;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, transform .1s;
+}
+
+.new-btn:hover  { background: var(--green-h); }
+.new-btn:active { transform: scale(.95); }
+
+/* ─── Sub-Header (Name + Teilen) ─────────────────────────────── */
+.sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .7rem 1.4rem;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  font-size: .85rem;
+  color: var(--muted);
+}
+
+.share-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: .35rem .8rem;
+  font-size: .82rem;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+
+.share-btn:hover {
+  background: #eef2ff;
+  border-color: var(--accent);
+}
+
+/* ─── Auth Screen ─────────────────────────────────────────────── */
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: .9rem;
+  background: none;
+  border: none;
+  font-size: .95rem;
+  font-family: var(--font);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.auth-form {
+  padding: 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.auth-form label {
+  font-size: .82rem;
+  color: var(--muted);
+  margin-top: .6rem;
+  font-weight: 600;
+}
+
+.auth-form input {
+  padding: .65rem 1rem;
+  font-size: 1rem;
+  font-family: var(--font);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  color: var(--text);
+  transition: border-color .18s;
+}
+
+.auth-form input:focus { border-color: var(--accent); }
+
+.auth-submit {
+  margin-top: 1.2rem;
+  padding: .75rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.auth-submit:hover { background: var(--accent-h); }
+
+.auth-error {
+  color: var(--danger);
+  font-size: .85rem;
+  text-align: center;
+  margin-top: .5rem;
 }
 
 /* ─── Input Area ─────────────────────────────────────────────── */
@@ -147,6 +275,12 @@ body {
   transition: color .15s, text-decoration .15s;
 }
 
+.item-added-by {
+  font-size: .72rem;
+  color: var(--muted);
+  display: block;
+}
+
 .product-list li.done .item-name {
   text-decoration: line-through;
   color: var(--muted);
@@ -201,6 +335,27 @@ body {
 #clearAllBtn:hover {
   background: var(--danger);
   color: #fff;
+}
+
+/* ─── Toast ──────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: #fff;
+  padding: .7rem 1.3rem;
+  border-radius: 10px;
+  font-size: .9rem;
+  box-shadow: var(--shadow);
+  animation: toastIn .2s ease;
+  z-index: 100;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
 }
 
 /* ─── Responsive ─────────────────────────────────────────────── */

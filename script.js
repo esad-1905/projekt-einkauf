@@ -4,10 +4,29 @@
     // ── Supabase Setup ───────────────────────────────────────────
     const SUPABASE_URL = 'https://kpqyeymjcoggdnosihey.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwcXlleW1qY29nZ2Rub3NpaGV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3Nzc1OTUsImV4cCI6MjA5ODM1MzU5NX0.NOIViDPPnrRDSk-4l2fr3SDs4o6rcBrQauhgL41RK4A';
-
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ── DOM refs ──────────────────────────────────────────────────
+    // ── DOM refs: Auth Screen ────────────────────────────────────
+    const authScreen = document.getElementById('authScreen');
+    const tabJoin = document.getElementById('tabJoin');
+    const tabCreate = document.getElementById('tabCreate');
+    const joinForm = document.getElementById('joinForm');
+    const createForm = document.getElementById('createForm');
+    const joinName = document.getElementById('joinName');
+    const joinListName = document.getElementById('joinListName');
+    const joinPassword = document.getElementById('joinPassword');
+    const joinError = document.getElementById('joinError');
+    const createName = document.getElementById('createName');
+    const createListName = document.getElementById('createListName');
+    const createPassword = document.getElementById('createPassword');
+    const createError = document.getElementById('createError');
+
+    // ── DOM refs: List Screen ────────────────────────────────────
+    const listScreen = document.getElementById('listScreen');
+    const currentListName = document.getElementById('currentListName');
+    const currentUserName = document.getElementById('currentUserName');
+    const newListBtn = document.getElementById('newListBtn');
+    const shareBtn = document.getElementById('shareBtn');
     const input = document.getElementById('productInput');
     const addBtn = document.getElementById('addBtn');
     const list = document.getElementById('productList');
@@ -15,27 +34,202 @@
     const listFooter = document.getElementById('listFooter');
     const itemCount = document.getElementById('itemCount');
     const clearAllBtn = document.getElementById('clearAllBtn');
+    const toast = document.getElementById('toast');
 
     // ── State ─────────────────────────────────────────────────────
     let items = [];
+    let currentList = null;   // { id, name }
+    let userName = '';
+    let realtimeChannel = null;
 
     // ── Init ──────────────────────────────────────────────────────
-    loadItems();
-    subscribeToChanges();
+    init();
 
-    // ── Events ────────────────────────────────────────────────────
-    addBtn.addEventListener('click', () => {
-        console.log('addBtn clicked');
-        addItem();
+    async function init() {
+        // 1. Prüfen ob über Share-Link aufgerufen (?list=ID)
+        const urlParams = new URLSearchParams(window.location.search);
+        const sharedListId = urlParams.get('list');
+
+        if (sharedListId) {
+            await enterListById(sharedListId);
+            return;
+        }
+
+        // 2. Prüfen ob im Browser gespeicherte Session existiert
+        const saved = loadSession();
+        if (saved) {
+            await enterListById(saved.listId, saved.userName);
+            return;
+        }
+
+        // 3. Sonst: Login-Screen zeigen
+        showAuthScreen();
+    }
+
+    // ── Tabs wechseln ─────────────────────────────────────────────
+    tabJoin.addEventListener('click', () => switchTab('join'));
+    tabCreate.addEventListener('click', () => switchTab('create'));
+
+    function switchTab(tab) {
+        const isJoin = tab === 'join';
+        tabJoin.classList.toggle('active', isJoin);
+        tabCreate.classList.toggle('active', !isJoin);
+        joinForm.hidden = !isJoin;
+        createForm.hidden = isJoin;
+        hideError(joinError);
+        hideError(createError);
+    }
+
+    // ── Liste BEITRETEN ──────────────────────────────────────────
+    joinForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError(joinError);
+
+        const name = joinName.value.trim();
+        const listName = joinListName.value.trim();
+        const password = joinPassword.value;
+
+        if (!name || !listName || !password) return;
+
+        const { data, error } = await supabase
+            .from('lists')
+            .select('*')
+            .eq('name', listName)
+            .eq('password', password)
+            .maybeSingle();
+
+        if (error) {
+            showError(joinError, 'Fehler: ' + error.message);
+            return;
+        }
+
+        if (!data) {
+            showError(joinError, 'Listenname oder Passwort falsch.');
+            return;
+        }
+
+        await enterList(data, name);
     });
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
-    clearAllBtn.addEventListener('click', clearAll);
 
-    // ── Daten laden ───────────────────────────────────────────────
+    // ── Liste ERSTELLEN ──────────────────────────────────────────
+    createForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError(createError);
+
+        const name = createName.value.trim();
+        const listName = createListName.value.trim();
+        const password = createPassword.value;
+
+        if (!name || !listName || !password) return;
+
+        // Prüfen ob Listenname schon vergeben ist
+        const { data: existing } = await supabase
+            .from('lists')
+            .select('id')
+            .eq('name', listName)
+            .maybeSingle();
+
+        if (existing) {
+            showError(createError, 'Dieser Listenname ist bereits vergeben.');
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from('lists')
+            .insert({ name: listName, password })
+            .select()
+            .single();
+
+        if (error) {
+            showError(createError, 'Fehler: ' + error.message);
+            return;
+        }
+
+        await enterList(data, name);
+    });
+
+    // ── Liste betreten (per Objekt) ──────────────────────────────
+    async function enterList(listRow, name) {
+        currentList = { id: listRow.id, name: listRow.name };
+        userName = name;
+
+        saveSession(currentList.id, userName);
+        clearUrlParam();
+
+        showListScreen();
+        await loadItems();
+        subscribeToChanges();
+    }
+
+    // ── Liste betreten per ID (Share-Link oder gespeicherte Session) ─
+    async function enterListById(listId, name) {
+        const { data, error } = await supabase
+            .from('lists')
+            .select('*')
+            .eq('id', listId)
+            .maybeSingle();
+
+        if (error || !data) {
+            // Liste existiert nicht (mehr) → zurück zum Login
+            clearSession();
+            showAuthScreen();
+            return;
+        }
+
+        if (!name) {
+            // Über Share-Link ohne gespeicherten Namen → nach Namen fragen
+            name = prompt(`Du trittst der Liste "${data.name}" bei. Wie ist dein Name?`);
+            if (!name) {
+                showAuthScreen();
+                return;
+            }
+        }
+
+        await enterList(data, name);
+    }
+
+    // ── New-Button: zurück zum Login für weitere Liste ───────────
+    newListBtn.addEventListener('click', () => {
+        if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+        clearSession();
+        clearUrlParam();
+        currentList = null;
+        items = [];
+        joinForm.reset();
+        createForm.reset();
+        showAuthScreen();
+    });
+
+    // ── Share-Button ──────────────────────────────────────────────
+    shareBtn.addEventListener('click', async () => {
+        const url = `${window.location.origin}${window.location.pathname}?list=${currentList.id}`;
+        try {
+            await navigator.clipboard.writeText(url);
+            showToast('Link kopiert! Einfach teilen.');
+        } catch {
+            prompt('Link kopieren:', url);
+        }
+    });
+
+    // ── Screens umschalten ────────────────────────────────────────
+    function showAuthScreen() {
+        authScreen.hidden = false;
+        listScreen.hidden = true;
+    }
+
+    function showListScreen() {
+        authScreen.hidden = true;
+        listScreen.hidden = false;
+        currentListName.textContent = currentList.name;
+        currentUserName.textContent = `👤 ${userName}`;
+    }
+
+    // ── Daten laden (nur Items der aktuellen Liste) ───────────────
     async function loadItems() {
         const { data, error } = await supabase
             .from('items')
             .select('*')
+            .eq('list_id', currentList.id)
             .order('created_at', { ascending: true });
 
         if (error) {
@@ -47,52 +241,46 @@
         render();
     }
 
-    // ── Realtime-Abo: reagiert auf Änderungen von ALLEN Geräten ───
+    // ── Realtime-Abo: nur für die aktuelle Liste ──────────────────
     function subscribeToChanges() {
-        supabase
-            .channel('items-changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, () => {
-                loadItems(); // bei jeder Änderung neu laden
-            })
+        realtimeChannel = supabase
+            .channel(`items-list-${currentList.id}`)
+            .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'items', filter: `list_id=eq.${currentList.id}` },
+                () => loadItems()
+            )
             .subscribe();
     }
 
-    // ── Funktionen ────────────────────────────────────────────────
+    // ── Events: Produktliste ──────────────────────────────────────
+    addBtn.addEventListener('click', addItem);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
+    clearAllBtn.addEventListener('click', clearAll);
+
     async function addItem() {
-        console.log('addItem()');
-        try {
-            const name = input.value.trim();
-            if (!name) {
-                input.focus();
-                input.classList.add('shake');
-                setTimeout(() => input.classList.remove('shake'), 400);
-                return;
-            }
-
-            const { error } = await supabase
-                .from('items')
-                .insert({ name, done: false });
-
-            if (error) {
-                console.error('Fehler beim Hinzufügen:', error);
-                return;
-            }
-
-            input.value = '';
+        const name = input.value.trim();
+        if (!name) {
             input.focus();
-            // Kein manuelles render() nötig — Realtime-Abo lädt automatisch neu
-        } catch (error) {
-            console.error('Fehler beim Hinzufügen:', error);
+            input.classList.add('shake');
+            setTimeout(() => input.classList.remove('shake'), 400);
+            return;
         }
 
+        const { error } = await supabase
+            .from('items')
+            .insert({ name, done: false, list_id: currentList.id, added_by: userName });
+
+        if (error) {
+            console.error('Fehler beim Hinzufügen:', error);
+            return;
+        }
+
+        input.value = '';
+        input.focus();
     }
 
     async function deleteItem(id) {
-        const { error } = await supabase
-            .from('items')
-            .delete()
-            .eq('id', id);
-
+        const { error } = await supabase.from('items').delete().eq('id', id);
         if (error) console.error('Fehler beim Löschen:', error);
     }
 
@@ -110,12 +298,12 @@
 
     async function clearAll() {
         if (!items.length) return;
-        if (!confirm('Alle Produkte löschen?')) return;
+        if (!confirm('Alle Produkte dieser Liste löschen?')) return;
 
         const { error } = await supabase
             .from('items')
             .delete()
-            .neq('id', 0); // löscht alle Zeilen
+            .eq('list_id', currentList.id);
 
         if (error) console.error('Fehler beim Löschen aller Produkte:', error);
     }
@@ -139,9 +327,16 @@
             cb.setAttribute('aria-label', `${item.name} erledigt`);
             cb.addEventListener('change', () => toggleDone(item.id));
 
-            const span = document.createElement('span');
-            span.className = 'item-name';
-            span.textContent = item.name;
+            const nameWrap = document.createElement('span');
+            nameWrap.className = 'item-name';
+            nameWrap.textContent = item.name;
+
+            if (item.added_by) {
+                const sub = document.createElement('span');
+                sub.className = 'item-added-by';
+                sub.textContent = `von ${item.added_by}`;
+                nameWrap.appendChild(sub);
+            }
 
             const del = document.createElement('button');
             del.className = 'delete-btn';
@@ -149,7 +344,7 @@
             del.setAttribute('aria-label', `${item.name} löschen`);
             del.addEventListener('click', () => deleteItem(item.id));
 
-            li.append(cb, span, del);
+            li.append(cb, nameWrap, del);
             list.appendChild(li);
         });
 
@@ -158,5 +353,45 @@
         itemCount.textContent = done
             ? `${done} von ${total} erledigt`
             : `${total} Produkt${total !== 1 ? 'e' : ''}`;
+    }
+
+    // ── Session (localStorage) ───────────────────────────────────
+    function saveSession(listId, name) {
+        try {
+            localStorage.setItem('shoppinglist_session', JSON.stringify({ listId, userName: name }));
+        } catch (_) { }
+    }
+
+    function loadSession() {
+        try {
+            const raw = localStorage.getItem('shoppinglist_session');
+            return raw ? JSON.parse(raw) : null;
+        } catch (_) { return null; }
+    }
+
+    function clearSession() {
+        try { localStorage.removeItem('shoppinglist_session'); } catch (_) { }
+    }
+
+    function clearUrlParam() {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('list');
+        window.history.replaceState({}, '', url);
+    }
+
+    // ── UI Helpers ────────────────────────────────────────────────
+    function showError(el, msg) {
+        el.textContent = msg;
+        el.hidden = false;
+    }
+
+    function hideError(el) {
+        el.hidden = true;
+    }
+
+    function showToast(msg) {
+        toast.textContent = msg;
+        toast.hidden = false;
+        setTimeout(() => { toast.hidden = true; }, 2500);
     }
 })();

@@ -10,11 +10,61 @@
 
 <body>
 
-    <div class="app">
+    <!-- ───────────── LOGIN / AUTH SCREEN ───────────── -->
+    <div class="app auth-screen" id="authScreen">
         <header class="app-header">
             <span class="header-icon">🛒</span>
             <h1>Einkaufsliste</h1>
         </header>
+
+        <div class="auth-tabs">
+            <button class="tab-btn active" id="tabJoin">Beitreten</button>
+            <button class="tab-btn" id="tabCreate">Erstellen</button>
+        </div>
+
+        <!-- Beitreten -->
+        <form class="auth-form" id="joinForm">
+            <label>Dein Name</label>
+            <input type="text" id="joinName" placeholder="z.B. Max" maxlength="30" required />
+
+            <label>Listenname</label>
+            <input type="text" id="joinListName" placeholder="z.B. Familie Meyer" maxlength="50" required />
+
+            <label>Passwort</label>
+            <input type="password" id="joinPassword" placeholder="Passwort" required />
+
+            <button type="submit" class="auth-submit">Beitreten</button>
+            <p class="auth-error" id="joinError" hidden></p>
+        </form>
+
+        <!-- Erstellen -->
+        <form class="auth-form" id="createForm" hidden>
+            <label>Dein Name</label>
+            <input type="text" id="createName" placeholder="z.B. Max" maxlength="30" required />
+
+            <label>Listenname</label>
+            <input type="text" id="createListName" placeholder="z.B. Familie Meyer" maxlength="50" required />
+
+            <label>Neues Passwort</label>
+            <input type="password" id="createPassword" placeholder="Passwort vergeben" required />
+
+            <button type="submit" class="auth-submit">Liste erstellen</button>
+            <p class="auth-error" id="createError" hidden></p>
+        </form>
+    </div>
+
+    <!-- ───────────── EINKAUFSLISTE SCREEN ───────────── -->
+    <div class="app list-screen" id="listScreen" hidden>
+        <header class="app-header">
+            <span class="header-icon">🛒</span>
+            <h1 id="currentListName">Einkaufsliste</h1>
+            <button id="newListBtn" class="new-btn" aria-label="Neue Liste">New</button>
+        </header>
+
+        <div class="sub-header">
+            <span id="currentUserName"></span>
+            <button id="shareBtn" class="share-btn">🔗 Teilen</button>
+        </div>
 
         <div class="input-area">
             <input type="text" id="productInput" placeholder="Produkt eingeben …" autocomplete="off" maxlength="60" />
@@ -32,6 +82,9 @@
             <button id="clearAllBtn">Alle löschen</button>
         </div>
     </div>
+
+    <div class="toast" id="toast" hidden></div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
 </body>
