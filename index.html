@@ -10,18 +10,106 @@
 
 <body>
 
-    <!-- ───────────── EINSTIEGS-AUSWAHL ───────────── -->
-    <div class="app choice-screen" id="choiceScreen">
+    <!-- ───────────── REGISTRIEREN SCREEN ───────────── -->
+    <div class="app auth-screen" id="registerScreen">
         <header class="app-header">
             <span class="header-icon">🛒</span>
             <h1>Einkaufsliste</h1>
+        </header>
+
+        <form class="auth-form" id="registerForm">
+            <label>Benutzername</label>
+            <input type="text" id="regUsername" placeholder="z.B. Max123" required />
+
+            <label>E-Mail</label>
+            <input type="email" id="regEmail" placeholder="max@beispiel.de" required />
+
+            <label>E-Mail wiederholen</label>
+            <input type="email" id="regEmailRepeat" placeholder="max@beispiel.de" required />
+
+            <button type="submit" class="auth-submit">Registrieren</button>
+            <p class="auth-error" id="registerError" hidden></p>
+        </form>
+
+        <p class="auth-switch">Bereits ein Konto? <a href="#" id="goToLogin">Login</a></p>
+    </div>
+
+    <!-- ───────────── LOGIN SCREEN ───────────── -->
+    <div class="app auth-screen" id="loginScreen" hidden>
+        <header class="app-header">
+            <button class="back-btn" id="backFromLogin" aria-label="Zurück">←</button>
+            <span class="header-icon">🔑</span>
+            <h1>Login</h1>
+        </header>
+
+        <form class="auth-form" id="loginForm">
+            <label>Benutzername</label>
+            <input type="text" id="loginUsername" placeholder="z.B. Max123" required />
+
+            <label>E-Mail</label>
+            <input type="email" id="loginEmail" placeholder="max@beispiel.de" required />
+
+            <button type="submit" class="auth-submit">Einloggen</button>
+            <p class="auth-error" id="loginError" hidden></p>
+        </form>
+
+        <p class="auth-switch">Noch kein Konto? <a href="#" id="goToRegister">Registrieren</a></p>
+    </div>
+
+    <!-- ───────────── ACCOUNT BEREICH (nach Login) ───────────── -->
+    <div class="app account-area" id="accountArea" hidden>
+
+        <header class="app-header">
+            <span class="header-icon">🛒</span>
+            <h1>Einkaufsliste</h1>
+        </header>
+
+        <!-- Navigationsleiste -->
+        <nav class="account-nav">
+            <button class="nav-btn active" id="navAccount">Mein Konto</button>
+            <button class="nav-btn" id="navLists">Meine Listen</button>
+            <button class="nav-btn logout-btn" id="navLogout">Abmelden</button>
+        </nav>
+
+        <!-- Mein Konto -->
+        <section class="nav-section" id="sectionAccount">
+            <div class="account-card">
+                <div class="account-row">
+                    <span class="account-label">Benutzername</span>
+                    <span class="account-value" id="accountUsername"></span>
+                </div>
+                <div class="account-row">
+                    <span class="account-label">E-Mail</span>
+                    <span class="account-value" id="accountEmail"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Meine Listen -->
+        <section class="nav-section" id="sectionLists" hidden>
+            <div class="my-lists-header">
+                <h2>Meine Listen</h2>
+                <button class="new-btn" id="newListBtn">New</button>
+            </div>
+            <ul class="my-lists" id="myListsUl"></ul>
+            <p class="empty-hint" id="myListsEmpty" hidden>Noch keine Einkaufsliste vorhanden.</p>
+        </section>
+
+    </div>
+
+    <!-- ───────────── EINSTIEGS-AUSWAHL (Liste beitreten/erstellen) ───────────── -->
+    <div class="app choice-screen" id="choiceScreen" hidden>
+        <header class="app-header">
+            <button class="back-btn" id="backFromChoice" aria-label="Zurück">←</button>
+            <span class="header-icon">🛒</span>
+            <h1>Liste hinzufügen</h1>
         </header>
 
         <div class="choice-buttons">
             <button class="choice-btn" id="goToJoin">
                 <span class="choice-icon">🔑</span>
                 <span class="choice-label">Liste beitreten</span>
-                <span class="choice-desc">Mit Name, Listenname &amp; Passwort</span>
+                <span class="choice-desc">Mit Listenname &amp; Passwort</span>
             </button>
             <button class="choice-btn" id="goToCreate">
                 <span class="choice-icon">✨</span>
@@ -40,9 +128,6 @@
         </header>
 
         <form class="auth-form" id="joinForm">
-            <label>Dein Name</label>
-            <input type="text" id="joinName" placeholder="z.B. Max" maxlength="30" required />
-
             <label>Listenname</label>
             <input type="text" id="joinListName" placeholder="z.B. Familie Meyer" maxlength="50" required />
 
@@ -63,9 +148,6 @@
         </header>
 
         <form class="auth-form" id="createForm">
-            <label>Dein Name</label>
-            <input type="text" id="createName" placeholder="z.B. Max" maxlength="30" required />
-
             <label>Listenname</label>
             <input type="text" id="createListName" placeholder="z.B. Familie Meyer" maxlength="50" required />
 
@@ -80,9 +162,9 @@
     <!-- ───────────── EINKAUFSLISTE SCREEN ───────────── -->
     <div class="app list-screen" id="listScreen" hidden>
         <header class="app-header">
+            <button class="back-btn" id="backFromList" aria-label="Zurück">←</button>
             <span class="header-icon">🛒</span>
             <h1 id="currentListName">Einkaufsliste</h1>
-            <button id="newListBtn" class="new-btn" aria-label="Neue Liste">New</button>
         </header>
 
         <div class="sub-header">

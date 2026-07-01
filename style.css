@@ -60,7 +60,25 @@ body {
   white-space: nowrap;
 }
 
-/* New-Button (grün, oben rechts) */
+.back-btn {
+  background: rgba(255,255,255,.2);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background .15s;
+}
+
+.back-btn:hover { background: rgba(255,255,255,.32); }
+
+/* New-Button (grün) */
 .new-btn {
   background: var(--green);
   color: #fff;
@@ -107,67 +125,7 @@ body {
   border-color: var(--accent);
 }
 
-/* ─── Auth Screen ─────────────────────────────────────────────── */
-.back-btn {
-  background: rgba(255,255,255,.2);
-  border: none;
-  color: #fff;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background .15s;
-}
-
-.back-btn:hover { background: rgba(255,255,255,.32); }
-
-/* ─── Choice Screen ──────────────────────────────────────────── */
-.choice-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: .9rem;
-  padding: 1.6rem 1.4rem;
-}
-
-.choice-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: .2rem;
-  padding: 1.2rem 1.4rem;
-  background: #f8fafc;
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  cursor: pointer;
-  text-align: left;
-  transition: border-color .15s, background .15s, transform .1s;
-}
-
-.choice-btn:hover {
-  border-color: var(--accent);
-  background: #eef2ff;
-}
-
-.choice-btn:active { transform: scale(.98); }
-
-.choice-icon { font-size: 1.6rem; }
-
-.choice-label {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.choice-desc {
-  font-size: .82rem;
-  color: var(--muted);
-}
-
+/* ─── Auth Forms ─────────────────────────────────────────────── */
 .auth-form {
   padding: 1.4rem;
   display: flex;
@@ -216,6 +174,176 @@ body {
   font-size: .85rem;
   text-align: center;
   margin-top: .5rem;
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: .88rem;
+  color: var(--muted);
+  padding: 0 1.4rem 1.4rem;
+}
+
+.auth-switch a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-switch a:hover { text-decoration: underline; }
+
+/* ─── Choice Screen ──────────────────────────────────────────── */
+.choice-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+  padding: 1.6rem 1.4rem;
+}
+
+.choice-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .2rem;
+  padding: 1.2rem 1.4rem;
+  background: #f8fafc;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+
+.choice-btn:hover {
+  border-color: var(--accent);
+  background: #eef2ff;
+}
+
+.choice-btn:active { transform: scale(.98); }
+
+.choice-icon { font-size: 1.6rem; }
+
+.choice-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.choice-desc {
+  font-size: .82rem;
+  color: var(--muted);
+}
+
+/* ─── Account Area: Navigation ───────────────────────────────── */
+.account-nav {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-btn {
+  flex: 1;
+  padding: .85rem .5rem;
+  background: none;
+  border: none;
+  font-size: .88rem;
+  font-family: var(--font);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s, background .15s;
+}
+
+.nav-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.nav-btn.logout-btn {
+  color: var(--danger);
+}
+
+.nav-btn.logout-btn:hover {
+  background: #fef2f2;
+}
+
+/* ─── Account: Mein Konto ─────────────────────────────────────── */
+.nav-section { padding: 1.4rem; }
+
+.account-card {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.account-row {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-row:last-child { border-bottom: none; }
+
+.account-label {
+  font-size: .78rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.account-value {
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ─── Account: Meine Listen ───────────────────────────────────── */
+.my-lists-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.my-lists-header h2 {
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.my-lists {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.my-lists li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .9rem 1.1rem;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+
+.my-lists li:hover {
+  border-color: var(--accent);
+  background: #eef2ff;
+}
+
+.my-lists li .list-name {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.my-lists li .list-arrow {
+  color: var(--muted);
 }
 
 /* ─── Input Area ─────────────────────────────────────────────── */
@@ -387,6 +515,8 @@ body {
   box-shadow: var(--shadow);
   animation: toastIn .2s ease;
   z-index: 100;
+  max-width: 90vw;
+  text-align: center;
 }
 
 @keyframes toastIn {
