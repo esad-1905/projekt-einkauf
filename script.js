@@ -6,6 +6,15 @@
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwcXlleW1qY29nZ2Rub3NpaGV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3Nzc1OTUsImV4cCI6MjA5ODM1MzU5NX0.NOIViDPPnrRDSk-4l2fr3SDs4o6rcBrQauhgL41RK4A';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ── SHA-256 Hashing (Web Crypto API) ─────────────────────────
+    async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     // ── DOM refs: Register / Login ───────────────────────────────
     const registerScreen = document.getElementById('registerScreen');
     const loginScreen = document.getElementById('loginScreen');
@@ -13,10 +22,11 @@
     const loginForm = document.getElementById('loginForm');
     const regUsername = document.getElementById('regUsername');
     const regEmail = document.getElementById('regEmail');
-    const regEmailRepeat = document.getElementById('regEmailRepeat');
+    const regPassword = document.getElementById('regPassword');
     const registerError = document.getElementById('registerError');
     const loginUsername = document.getElementById('loginUsername');
     const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
     const loginError = document.getElementById('loginError');
     const goToLogin = document.getElementById('goToLogin');
     const goToRegister = document.getElementById('goToRegister');
@@ -69,8 +79,8 @@
     const toast = document.getElementById('toast');
 
     // ── State ─────────────────────────────────────────────────────
-    let currentUser = null;  // { id, username, email }
-    let currentList = null;  // { id, name }
+    let currentUser = null;
+    let currentList = null;
     let items = [];
     let myLists = [];
     let realtimeChannel = null;
@@ -82,27 +92,22 @@
         const saved = loadUserSession();
         if (saved) {
             currentUser = saved;
-
-            // Über Share-Link aufgerufen?
             const urlParams = new URLSearchParams(window.location.search);
             const sharedListId = urlParams.get('list');
-
             if (sharedListId) {
                 await openListById(sharedListId, false);
                 return;
             }
-
             showAccountArea();
             return;
         }
         showScreen('register');
     }
 
-    // ── History API (Browser-Zurück) ─────────────────────────────
+    // ── History API ───────────────────────────────────────────────
     window.addEventListener('popstate', (e) => {
         const state = e.state;
         if (!state) { showAccountArea(); return; }
-
         if (state.screen === 'list' && state.listId) {
             openListById(state.listId, false);
         } else if (state.screen === 'account') {
@@ -119,7 +124,7 @@
         history.pushState(state, '', url || window.location.pathname);
     }
 
-    // ── Register / Login Navigation ──────────────────────────────
+    // ── Register / Login Navigation ───────────────────────────────
     goToLogin.addEventListener('click', (e) => { e.preventDefault(); showScreen('login'); });
     goToRegister.addEventListener('click', (e) => { e.preventDefault(); showScreen('register'); });
     backFromLogin.addEventListener('click', () => showScreen('register'));
@@ -131,14 +136,9 @@
 
         const username = regUsername.value.trim();
         const email = regEmail.value.trim().toLowerCase();
-        const emailRepeat = regEmailRepeat.value.trim().toLowerCase();
+        const password = regPassword.value;
 
-        if (!username || !email || !emailRepeat) return;
-
-        if (email !== emailRepeat) {
-            showError(registerError, 'Die E-Mail-Adressen stimmen nicht überein.');
-            return;
-        }
+        if (!username || !email || !password) return;
 
         // Prüfen ob Username oder Email schon existiert
         const { data: existing } = await supabase
@@ -152,9 +152,12 @@
             return;
         }
 
+        // Passwort hashen (SHA-256)
+        const hashedPassword = await hashPassword(password);
+
         const { data, error } = await supabase
             .from('users')
-            .insert({ username, email })
+            .insert({ username, email, password: hashedPassword })
             .select()
             .single();
 
@@ -165,10 +168,7 @@
 
         currentUser = data;
         saveUserSession(currentUser);
-
-        // Simulierte Willkommens-Mail
         sendWelcomeEmail(currentUser);
-
         showToast(`Willkommen, ${currentUser.username}! 🎉`);
         showAccountArea();
     });
@@ -180,14 +180,19 @@
 
         const username = loginUsername.value.trim();
         const email = loginEmail.value.trim().toLowerCase();
+        const password = loginPassword.value;
 
-        if (!username || !email) return;
+        if (!username || !email || !password) return;
+
+        // Passwort hashen vor dem Vergleich
+        const hashedPassword = await hashPassword(password);
 
         const { data, error } = await supabase
             .from('users')
             .select('*')
             .eq('username', username)
             .eq('email', email)
+            .eq('password', hashedPassword)
             .maybeSingle();
 
         if (error) {
@@ -196,7 +201,7 @@
         }
 
         if (!data) {
-            showError(loginError, 'Benutzername oder E-Mail falsch.');
+            showError(loginError, 'Benutzername, E-Mail oder Passwort falsch.');
             return;
         }
 
@@ -208,8 +213,6 @@
 
     // ── Simulierte Willkommens-Mail ───────────────────────────────
     function sendWelcomeEmail(user) {
-        // Hinweis: Hier würde im echten Betrieb eine Supabase Edge Function
-        // mit einem E-Mail-Dienst (z.B. Resend) aufgerufen werden.
         console.log(`[Simulierte E-Mail an ${user.email}]`);
         console.log(`Betreff: Willkommen in deiner Einkaufsliste`);
         console.log(`Willkommen in deiner Einkaufsliste, ${user.username}!`);
@@ -260,15 +263,9 @@
             .select('list_id, lists ( id, name )')
             .eq('user_id', currentUser.id);
 
-        if (error) {
-            console.error('Fehler beim Laden der Listen:', error);
-            return;
-        }
+        if (error) { console.error('Fehler beim Laden der Listen:', error); return; }
 
-        myLists = (data || [])
-            .map(row => row.lists)
-            .filter(Boolean);
-
+        myLists = (data || []).map(row => row.lists).filter(Boolean);
         renderMyLists();
     }
 
@@ -279,30 +276,25 @@
 
         myLists.forEach(l => {
             const li = document.createElement('li');
-
             const nameSpan = document.createElement('span');
             nameSpan.className = 'list-name';
             nameSpan.textContent = l.name;
-
             const arrow = document.createElement('span');
             arrow.className = 'list-arrow';
             arrow.textContent = '→';
-
             li.append(nameSpan, arrow);
             li.addEventListener('click', () => openList(l, true));
             myListsUl.appendChild(li);
         });
     }
 
-    // ── New-Button: zur Auswahl (Liste beitreten/erstellen) ───────
+    // ── New-Button ────────────────────────────────────────────────
     newListBtn.addEventListener('click', () => {
         showScreen('choice');
         pushHistory({ screen: 'choice' });
     });
 
-    backFromChoice.addEventListener('click', () => {
-        showAccountArea();
-    });
+    backFromChoice.addEventListener('click', () => showAccountArea());
 
     // ── Choice Navigation ─────────────────────────────────────────
     goToJoin.addEventListener('click', () => showScreen('join'));
@@ -324,22 +316,18 @@
 
         if (!listNameVal || !password) return;
 
+        // Listen-Passwort hashen
+        const hashedPassword = await hashPassword(password);
+
         const { data, error } = await supabase
             .from('lists')
             .select('*')
             .eq('name', listNameVal)
-            .eq('password', password)
+            .eq('password', hashedPassword)
             .maybeSingle();
 
-        if (error) {
-            showError(joinError, 'Fehler: ' + error.message);
-            return;
-        }
-
-        if (!data) {
-            showError(joinError, 'Listenname oder Passwort falsch.');
-            return;
-        }
+        if (error) { showError(joinError, 'Fehler: ' + error.message); return; }
+        if (!data) { showError(joinError, 'Listenname oder Passwort falsch.'); return; }
 
         await ensureMembership(data.id);
         joinForm.reset();
@@ -367,16 +355,16 @@
             return;
         }
 
+        // Listen-Passwort hashen
+        const hashedPassword = await hashPassword(password);
+
         const { data, error } = await supabase
             .from('lists')
-            .insert({ name: listNameVal, password })
+            .insert({ name: listNameVal, password: hashedPassword })
             .select()
             .single();
 
-        if (error) {
-            showError(createError, 'Fehler: ' + error.message);
-            return;
-        }
+        if (error) { showError(createError, 'Fehler: ' + error.message); return; }
 
         await ensureMembership(data.id);
         createForm.reset();
@@ -399,10 +387,9 @@
         }
     }
 
-    // ── Liste öffnen (per Objekt) ──────────────────────────────────
+    // ── Liste öffnen ──────────────────────────────────────────────
     async function openList(listRow, addHistoryEntry) {
         if (realtimeChannel) supabase.removeChannel(realtimeChannel);
-
         currentList = { id: listRow.id, name: listRow.name };
 
         if (addHistoryEntry) {
@@ -417,7 +404,6 @@
         subscribeToChanges();
     }
 
-    // ── Liste öffnen per ID (Share-Link, History) ──────────────────
     async function openListById(listId, addHistoryEntry) {
         const { data, error } = await supabase
             .from('lists')
@@ -446,7 +432,7 @@
         }
     });
 
-    // ── Daten laden (nur Items der aktuellen Liste) ───────────────
+    // ── Daten laden ───────────────────────────────────────────────
     async function loadItems() {
         const { data, error } = await supabase
             .from('items')
@@ -454,11 +440,7 @@
             .eq('list_id', currentList.id)
             .order('created_at', { ascending: true });
 
-        if (error) {
-            console.error('Fehler beim Laden:', error);
-            return;
-        }
-
+        if (error) { console.error('Fehler beim Laden:', error); return; }
         items = data;
         render();
     }
@@ -474,7 +456,7 @@
             .subscribe();
     }
 
-    // ── Events: Produktliste ──────────────────────────────────────
+    // ── Produktliste ──────────────────────────────────────────────
     addBtn.addEventListener('click', addItem);
     input.addEventListener('keydown', e => { if (e.key === 'Enter') addItem(); });
     clearAllBtn.addEventListener('click', clearAll);
@@ -492,11 +474,7 @@
             .from('items')
             .insert({ name, done: false, list_id: currentList.id, added_by: currentUser.username });
 
-        if (error) {
-            console.error('Fehler beim Hinzufügen:', error);
-            return;
-        }
-
+        if (error) { console.error('Fehler beim Hinzufügen:', error); return; }
         input.value = '';
         input.focus();
     }
@@ -507,7 +485,6 @@
         render();
 
         const { error } = await supabase.from('items').delete().eq('id', id);
-
         if (error) {
             console.error('Fehler beim Löschen:', error);
             items = previous;
@@ -518,15 +495,10 @@
     async function toggleDone(id) {
         const item = items.find(i => i.id === id);
         if (!item) return;
-
         item.done = !item.done;
         render();
 
-        const { error } = await supabase
-            .from('items')
-            .update({ done: item.done })
-            .eq('id', id);
-
+        const { error } = await supabase.from('items').update({ done: item.done }).eq('id', id);
         if (error) {
             console.error('Fehler beim Aktualisieren:', error);
             item.done = !item.done;
@@ -542,13 +514,9 @@
         items = [];
         render();
 
-        const { error } = await supabase
-            .from('items')
-            .delete()
-            .eq('list_id', currentList.id);
-
+        const { error } = await supabase.from('items').delete().eq('list_id', currentList.id);
         if (error) {
-            console.error('Fehler beim Löschen aller Produkte:', error);
+            console.error('Fehler:', error);
             items = previous;
             render();
         }
@@ -556,11 +524,9 @@
 
     function render() {
         list.innerHTML = '';
-
         const hasItems = items.length > 0;
         emptyHint.hidden = hasItems;
         listFooter.hidden = !hasItems;
-
         if (!hasItems) return;
 
         items.forEach(item => {
@@ -601,7 +567,7 @@
             : `${total} Produkt${total !== 1 ? 'e' : ''}`;
     }
 
-    // ── Screens umschalten ────────────────────────────────────────
+    // ── Screens ───────────────────────────────────────────────────
     function showScreen(name) {
         registerScreen.hidden = name !== 'register';
         loginScreen.hidden = name !== 'login';
@@ -612,7 +578,7 @@
         listScreen.hidden = name !== 'list';
     }
 
-    // ── User Session (localStorage) ────────────────────────────────
+    // ── Session ───────────────────────────────────────────────────
     function saveUserSession(user) {
         try { localStorage.setItem('shoppinglist_user', JSON.stringify(user)); } catch (_) { }
     }
@@ -629,14 +595,8 @@
     }
 
     // ── UI Helpers ────────────────────────────────────────────────
-    function showError(el, msg) {
-        el.textContent = msg;
-        el.hidden = false;
-    }
-
-    function hideError(el) {
-        el.hidden = true;
-    }
+    function showError(el, msg) { el.textContent = msg; el.hidden = false; }
+    function hideError(el) { el.hidden = true; }
 
     function showToast(msg) {
         toast.textContent = msg;
