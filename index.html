@@ -43,9 +43,6 @@
         </header>
 
         <form class="auth-form" id="loginForm">
-            <label>Benutzername</label>
-            <input type="text" id="loginUsername" placeholder="z.B. Max123" required />
-
             <label>E-Mail</label>
             <input type="email" id="loginEmail" placeholder="max@beispiel.de" required />
 
@@ -56,7 +53,37 @@
             <p class="auth-error" id="loginError" hidden></p>
         </form>
 
+        <p class="auth-switch"><a href="#" id="goToForgot">Passwort vergessen?</a></p>
         <p class="auth-switch">Noch kein Konto? <a href="#" id="goToRegister">Registrieren</a></p>
+    </div>
+
+    <!-- ───────────── PASSWORT VERGESSEN SCREEN ───────────── -->
+    <div class="app auth-screen" id="forgotScreen" hidden>
+        <header class="app-header">
+            <button class="back-btn" id="backFromForgot" aria-label="Zurück">←</button>
+            <span class="header-icon">🔒</span>
+            <h1>Passwort vergessen</h1>
+        </header>
+
+        <form class="auth-form" id="forgotForm">
+            <label>E-Mail</label>
+            <input type="email" id="forgotEmail" placeholder="max@beispiel.de" required />
+
+            <label>Neues Passwort</label>
+            <input type="password" id="forgotNewPassword" placeholder="Neues Passwort" required />
+
+            <label>Neues Passwort wiederholen</label>
+            <input type="password" id="forgotNewPasswordRepeat" placeholder="Passwort wiederholen" required />
+
+            <button type="submit" class="auth-submit">Passwort ändern</button>
+            <p class="auth-error" id="forgotError" hidden></p>
+        </form>
+
+        <div class="forgot-success" id="forgotSuccess" hidden>
+            <div class="success-icon">✅</div>
+            <p class="success-text">Erfolgreich geändert</p>
+            <button class="auth-submit" id="goToLoginFromForgot">Zum Login</button>
+        </div>
     </div>
 
     <!-- ───────────── ACCOUNT BEREICH (nach Login) ───────────── -->
@@ -67,14 +94,12 @@
             <h1>Einkaufsliste</h1>
         </header>
 
-        <!-- Navigationsleiste -->
         <nav class="account-nav">
             <button class="nav-btn active" id="navAccount">Mein Konto</button>
             <button class="nav-btn" id="navLists">Meine Listen</button>
             <button class="nav-btn logout-btn" id="navLogout">Abmelden</button>
         </nav>
 
-        <!-- Mein Konto -->
         <section class="nav-section" id="sectionAccount">
             <div class="account-card">
                 <div class="account-row">
@@ -88,7 +113,6 @@
             </div>
         </section>
 
-        <!-- Meine Listen -->
         <section class="nav-section" id="sectionLists" hidden>
             <div class="my-lists-header">
                 <h2>Meine Listen</h2>
@@ -100,7 +124,7 @@
 
     </div>
 
-    <!-- ───────────── EINSTIEGS-AUSWAHL (Liste beitreten/erstellen) ───────────── -->
+    <!-- ───────────── EINSTIEGS-AUSWAHL ───────────── -->
     <div class="app choice-screen" id="choiceScreen" hidden>
         <header class="app-header">
             <button class="back-btn" id="backFromChoice" aria-label="Zurück">←</button>

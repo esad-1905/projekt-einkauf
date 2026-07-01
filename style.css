@@ -191,6 +191,34 @@ body {
 
 .auth-switch a:hover { text-decoration: underline; }
 
+/* ─── Passwort vergessen: Erfolg ─────────────────────────────── */
+.forgot-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2.5rem 1.4rem 1.4rem;
+}
+
+.success-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.success-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+.forgot-success .auth-submit {
+  width: 100%;
+  margin-top: .5rem;
+}
+
 /* ─── Choice Screen ──────────────────────────────────────────── */
 .choice-buttons {
   display: flex;

@@ -18,19 +18,28 @@
     // ── DOM refs: Register / Login ───────────────────────────────
     const registerScreen = document.getElementById('registerScreen');
     const loginScreen = document.getElementById('loginScreen');
+    const forgotScreen = document.getElementById('forgotScreen');
     const registerForm = document.getElementById('registerForm');
     const loginForm = document.getElementById('loginForm');
+    const forgotForm = document.getElementById('forgotForm');
     const regUsername = document.getElementById('regUsername');
     const regEmail = document.getElementById('regEmail');
     const regPassword = document.getElementById('regPassword');
     const registerError = document.getElementById('registerError');
-    const loginUsername = document.getElementById('loginUsername');
     const loginEmail = document.getElementById('loginEmail');
     const loginPassword = document.getElementById('loginPassword');
     const loginError = document.getElementById('loginError');
+    const forgotEmail = document.getElementById('forgotEmail');
+    const forgotNewPassword = document.getElementById('forgotNewPassword');
+    const forgotNewPasswordRepeat = document.getElementById('forgotNewPasswordRepeat');
+    const forgotError = document.getElementById('forgotError');
+    const forgotSuccess = document.getElementById('forgotSuccess');
     const goToLogin = document.getElementById('goToLogin');
     const goToRegister = document.getElementById('goToRegister');
+    const goToForgot = document.getElementById('goToForgot');
     const backFromLogin = document.getElementById('backFromLogin');
+    const backFromForgot = document.getElementById('backFromForgot');
+    const goToLoginFromForgot = document.getElementById('goToLoginFromForgot');
 
     // ── DOM refs: Account Area ───────────────────────────────────
     const accountArea = document.getElementById('accountArea');
@@ -127,7 +136,17 @@
     // ── Register / Login Navigation ───────────────────────────────
     goToLogin.addEventListener('click', (e) => { e.preventDefault(); showScreen('login'); });
     goToRegister.addEventListener('click', (e) => { e.preventDefault(); showScreen('register'); });
+    goToForgot.addEventListener('click', (e) => {
+        e.preventDefault();
+        forgotForm.reset();
+        forgotSuccess.hidden = true;
+        forgotForm.hidden = false;
+        hideError(forgotError);
+        showScreen('forgot');
+    });
     backFromLogin.addEventListener('click', () => showScreen('register'));
+    backFromForgot.addEventListener('click', () => showScreen('login'));
+    goToLoginFromForgot.addEventListener('click', () => showScreen('login'));
 
     // ── Registrieren ──────────────────────────────────────────────
     registerForm.addEventListener('submit', async (e) => {
@@ -178,37 +197,75 @@
         e.preventDefault();
         hideError(loginError);
 
-        const username = loginUsername.value.trim();
         const email = loginEmail.value.trim().toLowerCase();
         const password = loginPassword.value;
 
-        if (!username || !email || !password) return;
+        if (!email || !password) return;
 
-        // Passwort hashen vor dem Vergleich
         const hashedPassword = await hashPassword(password);
 
         const { data, error } = await supabase
             .from('users')
             .select('*')
-            .eq('username', username)
             .eq('email', email)
             .eq('password', hashedPassword)
             .maybeSingle();
 
-        if (error) {
-            showError(loginError, 'Fehler: ' + error.message);
-            return;
-        }
-
-        if (!data) {
-            showError(loginError, 'Benutzername, E-Mail oder Passwort falsch.');
-            return;
-        }
+        if (error) { showError(loginError, 'Fehler: ' + error.message); return; }
+        if (!data) { showError(loginError, 'E-Mail oder Passwort falsch.'); return; }
 
         currentUser = data;
         saveUserSession(currentUser);
         showToast(`Willkommen zurück, ${currentUser.username}!`);
         showAccountArea();
+    });
+
+    // ── Passwort vergessen ────────────────────────────────────────
+    forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideError(forgotError);
+
+        const email = forgotEmail.value.trim().toLowerCase();
+        const newPw = forgotNewPassword.value;
+        const newPwRepeat = forgotNewPasswordRepeat.value;
+
+        if (!email || !newPw || !newPwRepeat) return;
+
+        if (newPw !== newPwRepeat) {
+            showError(forgotError, 'Die Passwörter stimmen nicht überein.');
+            return;
+        }
+
+        // User per Email suchen
+        const { data: user, error: findError } = await supabase
+            .from('users')
+            .select('id, password')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (findError) { showError(forgotError, 'Fehler: ' + findError.message); return; }
+        if (!user) { showError(forgotError, 'Keine Konto mit dieser E-Mail gefunden.'); return; }
+
+        // Neues Passwort hashen
+        const hashedNew = await hashPassword(newPw);
+
+        // Neues Passwort darf nicht mit altem übereinstimmen
+        if (hashedNew === user.password) {
+            showError(forgotError, 'Das neue Passwort darf nicht mit dem alten übereinstimmen.');
+            return;
+        }
+
+        // Passwort aktualisieren
+        const { error: updateError } = await supabase
+            .from('users')
+            .update({ password: hashedNew })
+            .eq('id', user.id);
+
+        if (updateError) { showError(forgotError, 'Fehler: ' + updateError.message); return; }
+
+        // Erfolg anzeigen
+        forgotForm.hidden = true;
+        forgotSuccess.hidden = false;
     });
 
     // ── Simulierte Willkommens-Mail ───────────────────────────────
@@ -571,6 +628,7 @@
     function showScreen(name) {
         registerScreen.hidden = name !== 'register';
         loginScreen.hidden = name !== 'login';
+        forgotScreen.hidden = name !== 'forgot';
         accountArea.hidden = name !== 'account';
         choiceScreen.hidden = name !== 'choice';
         joinScreen.hidden = name !== 'join';
