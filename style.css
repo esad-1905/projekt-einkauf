@@ -125,6 +125,67 @@ body {
   border-color: var(--accent);
 }
 
+.sub-btns {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+
+.members-wrapper {
+  position: relative;
+}
+
+.members-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + .5rem);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  min-width: 180px;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.members-title {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: .7rem 1rem .4rem;
+}
+
+.members-dropdown ul {
+  list-style: none;
+  padding: 0 0 .5rem;
+}
+
+.members-dropdown ul li {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem 1rem;
+  font-size: .9rem;
+  color: var(--text);
+}
+
+.member-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
 /* ─── Auth Forms ─────────────────────────────────────────────── */
 .auth-form {
   padding: 1.4rem;

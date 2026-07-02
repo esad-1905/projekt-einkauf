@@ -210,7 +210,16 @@
 
         <div class="sub-header">
             <span id="currentUserName"></span>
-            <button id="shareBtn" class="share-btn">🔗 Teilen</button>
+            <div class="sub-btns">
+                <div class="members-wrapper">
+                    <button id="membersBtn" class="share-btn">👥 Benutzer</button>
+                    <div class="members-dropdown" id="membersDropdown" hidden>
+                        <p class="members-title">Mitglieder</p>
+                        <ul id="membersList"></ul>
+                    </div>
+                </div>
+                <button id="shareBtn" class="share-btn">🔗 Teilen</button>
+            </div>
         </div>
 
         <div class="input-area">

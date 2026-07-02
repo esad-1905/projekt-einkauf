@@ -491,6 +491,52 @@
         await openList(data, addHistoryEntry);
     }
 
+    // ── Benutzer-Dropdown ─────────────────────────────────────────
+    const membersBtn = document.getElementById('membersBtn');
+    const membersDropdown = document.getElementById('membersDropdown');
+    const membersList = document.getElementById('membersList');
+
+    membersBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const isOpen = !membersDropdown.hidden;
+        membersDropdown.hidden = isOpen;
+        if (!isOpen) await loadMembers();
+    });
+
+    document.addEventListener('click', () => {
+        membersDropdown.hidden = true;
+    });
+
+    async function loadMembers() {
+        membersList.innerHTML = '<li style="padding:.55rem 1rem;color:var(--muted);font-size:.85rem">Lädt…</li>';
+
+        const { data, error } = await supabase
+            .from('list_members')
+            .select('user_id, users ( username )')
+            .eq('list_id', currentList.id);
+
+        if (error || !data) {
+            membersList.innerHTML = '<li style="padding:.55rem 1rem;color:var(--danger);font-size:.85rem">Fehler beim Laden</li>';
+            return;
+        }
+
+        membersList.innerHTML = '';
+        data.forEach(row => {
+            const username = row.users?.username || 'Unbekannt';
+            const li = document.createElement('li');
+
+            const avatar = document.createElement('div');
+            avatar.className = 'member-avatar';
+            avatar.textContent = username.charAt(0);
+
+            const name = document.createElement('span');
+            name.textContent = username;
+
+            li.append(avatar, name);
+            membersList.appendChild(li);
+        });
+    }
+
     // ── Share-Button ──────────────────────────────────────────────
     shareBtn.addEventListener('click', async () => {
         const url = `${window.location.origin}${window.location.pathname}?list=${currentList.id}`;
