@@ -33,13 +33,13 @@
     const forgotNewPassword = document.getElementById('forgotNewPassword');
     const forgotNewPasswordRepeat = document.getElementById('forgotNewPasswordRepeat');
     const forgotError = document.getElementById('forgotError');
-    const forgotSuccess = document.getElementById('forgotSuccess');
+
     const goToLogin = document.getElementById('goToLogin');
     const goToRegister = document.getElementById('goToRegister');
     const goToForgot = document.getElementById('goToForgot');
     const backFromLogin = document.getElementById('backFromLogin');
     const backFromForgot = document.getElementById('backFromForgot');
-    const goToLoginFromForgot = document.getElementById('goToLoginFromForgot');
+
 
     // ── DOM refs: Account Area ───────────────────────────────────
     const accountArea = document.getElementById('accountArea');
@@ -133,20 +133,29 @@
         history.pushState(state, '', url || window.location.pathname);
     }
 
+    // ── Passwort Auge-Toggle (gilt für alle pw-toggle Buttons) ───
+    document.querySelectorAll('.pw-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const pwInput = document.getElementById(targetId);
+            const isHidden = pwInput.type === 'password';
+            pwInput.type = isHidden ? 'text' : 'password';
+            btn.textContent = isHidden ? '🙈' : '👁';
+        });
+    });
+
     // ── Register / Login Navigation ───────────────────────────────
     goToLogin.addEventListener('click', (e) => { e.preventDefault(); showScreen('login'); });
     goToRegister.addEventListener('click', (e) => { e.preventDefault(); showScreen('register'); });
     goToForgot.addEventListener('click', (e) => {
         e.preventDefault();
         forgotForm.reset();
-        forgotSuccess.hidden = true;
-        forgotForm.hidden = false;
         hideError(forgotError);
         showScreen('forgot');
     });
     backFromLogin.addEventListener('click', () => showScreen('register'));
     backFromForgot.addEventListener('click', () => showScreen('login'));
-    goToLoginFromForgot.addEventListener('click', () => showScreen('login'));
+
 
     // ── Registrieren ──────────────────────────────────────────────
     registerForm.addEventListener('submit', async (e) => {
@@ -263,9 +272,13 @@
 
         if (updateError) { showError(forgotError, 'Fehler: ' + updateError.message); return; }
 
-        // Erfolg anzeigen
-        forgotForm.hidden = true;
-        forgotSuccess.hidden = false;
+        showToast("✅ Passwort erfolgreich geändert!");
+        forgotForm.reset();
+        setTimeout(() => showScreen("login"), 2000);
+
+
+
+
     });
 
     // ── Simulierte Willkommens-Mail ───────────────────────────────

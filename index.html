@@ -25,7 +25,10 @@
             <input type="email" id="regEmail" placeholder="max@beispiel.de" required />
 
             <label>Passwort</label>
-            <input type="password" id="regPassword" placeholder="Passwort wählen" required />
+            <div class="pw-wrapper">
+                <input type="password" id="regPassword" placeholder="Passwort wählen" required />
+                <button type="button" class="pw-toggle" data-target="regPassword">👁</button>
+            </div>
 
             <button type="submit" class="auth-submit">Registrieren</button>
             <p class="auth-error" id="registerError" hidden></p>
@@ -47,7 +50,10 @@
             <input type="email" id="loginEmail" placeholder="max@beispiel.de" required />
 
             <label>Passwort</label>
-            <input type="password" id="loginPassword" placeholder="Dein Passwort" required />
+            <div class="pw-wrapper">
+                <input type="password" id="loginPassword" placeholder="Dein Passwort" required />
+                <button type="button" class="pw-toggle" data-target="loginPassword">👁</button>
+            </div>
 
             <button type="submit" class="auth-submit">Einloggen</button>
             <p class="auth-error" id="loginError" hidden></p>
@@ -70,20 +76,22 @@
             <input type="email" id="forgotEmail" placeholder="max@beispiel.de" required />
 
             <label>Neues Passwort</label>
-            <input type="password" id="forgotNewPassword" placeholder="Neues Passwort" required />
+            <div class="pw-wrapper">
+                <input type="password" id="forgotNewPassword" placeholder="Neues Passwort" required />
+                <button type="button" class="pw-toggle" data-target="forgotNewPassword">👁</button>
+            </div>
 
             <label>Neues Passwort wiederholen</label>
-            <input type="password" id="forgotNewPasswordRepeat" placeholder="Passwort wiederholen" required />
+            <div class="pw-wrapper">
+                <input type="password" id="forgotNewPasswordRepeat" placeholder="Passwort wiederholen" required />
+                <button type="button" class="pw-toggle" data-target="forgotNewPasswordRepeat">👁</button>
+            </div>
 
             <button type="submit" class="auth-submit">Passwort ändern</button>
             <p class="auth-error" id="forgotError" hidden></p>
         </form>
 
-        <div class="forgot-success" id="forgotSuccess" hidden>
-            <div class="success-icon">✅</div>
-            <p class="success-text">Erfolgreich geändert</p>
-            <button class="auth-submit" id="goToLoginFromForgot">Zum Login</button>
-        </div>
+
     </div>
 
     <!-- ───────────── ACCOUNT BEREICH (nach Login) ───────────── -->
@@ -159,7 +167,10 @@
             <input type="text" id="joinListName" placeholder="z.B. Familie Meyer" maxlength="50" required />
 
             <label>Passwort</label>
-            <input type="password" id="joinPassword" placeholder="Passwort" required />
+            <div class="pw-wrapper">
+                <input type="password" id="joinPassword" placeholder="Passwort" required />
+                <button type="button" class="pw-toggle" data-target="joinPassword">👁</button>
+            </div>
 
             <button type="submit" class="auth-submit">Beitreten</button>
             <p class="auth-error" id="joinError" hidden></p>
@@ -179,7 +190,10 @@
             <input type="text" id="createListName" placeholder="z.B. Familie Meyer" maxlength="50" required />
 
             <label>Neues Passwort</label>
-            <input type="password" id="createPassword" placeholder="Passwort vergeben" required />
+            <div class="pw-wrapper">
+                <input type="password" id="createPassword" placeholder="Passwort vergeben" required />
+                <button type="button" class="pw-toggle" data-target="createPassword">👁</button>
+            </div>
 
             <button type="submit" class="auth-submit">Liste erstellen</button>
             <p class="auth-error" id="createError" hidden></p>
