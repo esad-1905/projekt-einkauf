@@ -436,13 +436,13 @@
 
         if (error) { showError(createError, 'Fehler: ' + error.message); return; }
 
-        await ensureMembership(data.id);
+        await ensureMembership(data.id, true); // Ersteller wird Admin
         createForm.reset();
         await openList(data, true);
     });
 
     // ── Mitgliedschaft sicherstellen ──────────────────────────────
-    async function ensureMembership(listId) {
+    async function ensureMembership(listId, isAdmin = false) {
         const { data: existing } = await supabase
             .from('list_members')
             .select('id')
@@ -453,7 +453,7 @@
         if (!existing) {
             await supabase
                 .from('list_members')
-                .insert({ user_id: currentUser.id, list_id: listId });
+                .insert({ user_id: currentUser.id, list_id: listId, is_admin: isAdmin });
         }
     }
 
@@ -469,6 +469,21 @@
         showScreen('list');
         currentListNameEl.textContent = currentList.name;
         currentUserNameEl.textContent = `👤 ${currentUser.username}`;
+
+        // Admin-Status laden und Share-Button steuern
+        const { data: membership } = await supabase
+            .from('list_members')
+            .select('is_admin')
+            .eq('user_id', currentUser.id)
+            .eq('list_id', currentList.id)
+            .maybeSingle();
+
+        currentList.isAdmin = membership?.is_admin || false;
+
+        // Share-Button: nur für Admin aktiv
+        shareBtn.disabled = !currentList.isAdmin;
+        shareBtn.style.opacity = currentList.isAdmin ? '1' : '0.4';
+        shareBtn.style.cursor = currentList.isAdmin ? 'pointer' : 'not-allowed';
 
         await loadItems();
         subscribeToChanges();
@@ -512,7 +527,7 @@
 
         const { data, error } = await supabase
             .from('list_members')
-            .select('user_id, users ( username )')
+            .select('id, user_id, is_admin, users ( username )')
             .eq('list_id', currentList.id);
 
         if (error || !data) {
@@ -520,9 +535,15 @@
             return;
         }
 
+        // Admin zuerst sortieren
+        const sorted = [...data].sort((a, b) => (b.is_admin ? 1 : 0) - (a.is_admin ? 1 : 0));
+
         membersList.innerHTML = '';
-        data.forEach(row => {
+        sorted.forEach(row => {
             const username = row.users?.username || 'Unbekannt';
+            const isThisAdmin = row.is_admin;
+            const isMe = row.user_id === currentUser.id;
+
             const li = document.createElement('li');
 
             const avatar = document.createElement('div');
@@ -530,9 +551,41 @@
             avatar.textContent = username.charAt(0);
 
             const name = document.createElement('span');
+            name.className = 'member-name';
             name.textContent = username;
 
             li.append(avatar, name);
+
+            if (isThisAdmin) {
+                const badge = document.createElement('span');
+                badge.className = 'member-badge';
+                badge.textContent = 'Admin';
+                li.append(badge);
+            }
+
+            // Entfernen-Button nur für Admin sichtbar, nicht für sich selbst
+            if (currentList.isAdmin && !isThisAdmin) {
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'member-remove';
+                removeBtn.textContent = '✕';
+                removeBtn.title = `${username} entfernen`;
+                removeBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Möchtest du "${username}" wirklich aus der Liste entfernen?`)) return;
+                    const { error: delError } = await supabase
+                        .from('list_members')
+                        .delete()
+                        .eq('id', row.id);
+                    if (delError) {
+                        showToast('Fehler beim Entfernen.');
+                    } else {
+                        showToast(`${username} wurde entfernt.`);
+                        await loadMembers();
+                    }
+                });
+                li.append(removeBtn);
+            }
+
             membersList.appendChild(li);
         });
     }

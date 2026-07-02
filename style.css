@@ -143,7 +143,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   box-shadow: var(--shadow);
-  min-width: 180px;
+  min-width: 240px;
   z-index: 50;
   overflow: hidden;
 }
@@ -184,6 +184,40 @@ body {
   justify-content: center;
   flex-shrink: 0;
   text-transform: uppercase;
+}
+
+.member-name {
+  flex: 1;
+}
+
+.member-badge {
+  font-size: .72rem;
+  color: var(--muted);
+  font-weight: 600;
+  margin-left: auto;
+  padding-right: .2rem;
+}
+
+.member-remove {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: .85rem;
+  cursor: pointer;
+  padding: .2rem .4rem;
+  border-radius: 5px;
+  margin-left: auto;
+  transition: color .15s, background .15s;
+  flex-shrink: 0;
+}
+
+.member-remove:hover {
+  color: var(--danger);
+  background: #fef2f2;
+}
+
+.members-dropdown ul li {
+  gap: .5rem;
 }
 
 /* ─── Auth Forms ─────────────────────────────────────────────── */
