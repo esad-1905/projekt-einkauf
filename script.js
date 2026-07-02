@@ -622,6 +622,24 @@
                 { event: '*', schema: 'public', table: 'items', filter: `list_id=eq.${currentList.id}` },
                 () => loadItems()
             )
+            .on('postgres_changes',
+                { event: 'DELETE', schema: 'public', table: 'list_members' },
+                async (payload) => {
+                    // Prüfen ob der aktuelle User entfernt wurde
+                    const { data: stillMember } = await supabase
+                        .from('list_members')
+                        .select('id')
+                        .eq('user_id', currentUser.id)
+                        .eq('list_id', currentList.id)
+                        .maybeSingle();
+
+                    if (!stillMember) {
+                        supabase.removeChannel(realtimeChannel);
+                        showToast('Du wurdest aus der Liste entfernt.');
+                        setTimeout(() => showAccountArea(), 1500);
+                    }
+                }
+            )
             .subscribe();
     }
 
@@ -636,6 +654,20 @@
             input.focus();
             input.classList.add('shake');
             setTimeout(() => input.classList.remove('shake'), 400);
+            return;
+        }
+
+        // Prüfen ob User noch Mitglied ist
+        const { data: stillMember } = await supabase
+            .from('list_members')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .eq('list_id', currentList.id)
+            .maybeSingle();
+
+        if (!stillMember) {
+            showToast('Du bist kein Mitglied dieser Liste mehr.');
+            setTimeout(() => showAccountArea(), 1500);
             return;
         }
 
